@@ -588,7 +588,8 @@ bool CreateAll(const WCHAR* dir) {
 
 // remove directory and all its children
 bool RemoveAll(const WCHAR* dir) {
-    // path must be doubly terminated (https://docs.microsoft.com/en-us/windows/desktop/api/shellapi/ns-shellapi-_shfileopstructa)
+    // path must be doubly terminated
+    // (https://docs.microsoft.com/en-us/windows/desktop/api/shellapi/ns-shellapi-_shfileopstructa)
     size_t n = str::Len(dir) + 2;
     WCHAR* path = AllocArray<WCHAR>(n);
     str::BufSet(path, n, dir);
