@@ -313,13 +313,15 @@ workspace "SumatraPDF"
       "oleAut32", "shlwapi", "version", "crypt32"
     }
 
-
+--[[
+  -- TODO: move directly into SumatraPDF
   project "synctex"
     kind "StaticLib"
     language "C"
     disablewarnings { "4100", "4244", "4267", "4702", "4706" }
     includedirs { "ext/zlib", "ext/synctex" }
     synctex_files()
+--]]
 
 
   project "utils"
@@ -333,14 +335,19 @@ workspace "SumatraPDF"
     utils_files()
 
 
+  -- TODO: move directly into SumatraPDF
+--[[
   project "mui"
     kind "StaticLib"
     language "C++"
     cppdialect "C++17"
     includedirs { "src" }
     mui_files()
+--]]
 
 
+  -- TODO: move directly into SumatraPDF
+--[[
   project "uia"
     kind "StaticLib"
     language "C++"
@@ -348,8 +355,11 @@ workspace "SumatraPDF"
     disablewarnings { "4302", "4311", "4838" }
     includedirs { "src" }
     uia_files()
+--]]
 
 
+--[[
+  -- TODO: move directly into SumatraPDF
   project "sumatra"
     kind "StaticLib"
     language "C++"
@@ -358,9 +368,10 @@ workspace "SumatraPDF"
     disablewarnings { "4838" }
     includedirs { "src", "ext/synctex" }
     sumatra_files()
-
+--]]
 
   ---- executables
+--[[
   project "efi"
     kind "ConsoleApp"
     language "C++"
@@ -368,8 +379,9 @@ workspace "SumatraPDF"
     disablewarnings { "4091", "4577" }
     includedirs { "src" }
     efi_files()
+--]]
 
-
+--[[
   project "mutool"
     kind "ConsoleApp"
     language "C"
@@ -379,8 +391,9 @@ workspace "SumatraPDF"
     links { "mupdf" }
     links { "windowscodecs" }
     entrypoint "wmainCRTStartup"
+--]]
 
-
+--[[
   project "mudraw"
     kind "ConsoleApp"
     language "C"
@@ -391,8 +404,10 @@ workspace "SumatraPDF"
     links { "windowscodecs" }
     linkoptions { "/ENTRY:\"wmainCRTStartup\"" }
     entrypoint "wmainCRTStartup"
+--]]
 
 
+  -- TODO: do I need cmapdump and buildcmap?
   project "cmapdump"
     kind "ConsoleApp"
     language "C"
@@ -449,6 +464,7 @@ workspace "SumatraPDF"
     links { "gdiplus", "comctl32", "shlwapi", "Version" }
 
 
+--[[
   project "signfile"
     kind "ConsoleApp"
     language "C++"
@@ -457,6 +473,7 @@ workspace "SumatraPDF"
     files { "src/tools/signfile.cpp" }
     links { "utils", "mupdf" }
     links { "crypt32", "shlwapi" }
+--]]
 
 
   project "plugin-test"
@@ -517,7 +534,7 @@ workspace "SumatraPDF"
     links { "utils", "libmupdf", "chm" }
     links { "comctl32", "gdiplus", "msimg32", "shlwapi", "version" }
 
-
+--[[
   project "SumatraPDF"
     kind "WindowedApp"
     language "C++"
@@ -540,29 +557,55 @@ workspace "SumatraPDF"
     }
     -- this is to prevent dll hijacking
     linkoptions { "/DELAYLOAD:gdiplus.dll /DELAYLOAD:msimg32.dll /DELAYLOAD:shlwapi.dll /DELAYLOAD:urlmon.dll /DELAYLOAD:version.dll /DELAYLOAD:wininet.dll"}
+--]]
 
 
-  project "SumatraPDF-no-MUPDF"
+  project "SumatraPDF"
     kind "WindowedApp"
     language "C++"
     cppdialect "C++17"
     entrypoint "WinMainCRTStartup"
     flags { "NoManifest" }
-    includedirs { "src", "mupdf/include" }
+    includedirs { "src", "mupdf/include", "ext/zlib", "ext/synctex" }
+
+    -- TODO: those are just for synctext. figure out how to
+    -- apply those on a per-file basis
+    disablewarnings { "4100", "4244", "4267", "4702", "4706" }
+
+    -- TODO: those are just for uia_files()
+    disablewarnings { "4302", "4311", "4838" }
+
+    resdefines { "INSTALL_PAYLOAD_ZIP=.\\%{cfg.targetdir}\\InstallerData.dat" }
     sumatrapdf_files()
+    sumatra_files()
+    mui_files()
+    uia_files()
+    synctex_files()
+    files {
+      "docs/releasenotes.txt",
+      "docs/releaseplan.txt",
+    }
     files { "src/MuPDF_Exports.cpp" }
     links {
-      "synctex", "sumatra", "libmupdf", "utils", "mui", "engines",
-      "uia", "unarrlib", "libwebp"
+      "libmupdf", "utils", "engines",
+      "unarrlib", "libwebp"
     }
     links {
       "comctl32", "delayimp", "gdiplus", "msimg32", "shlwapi", "urlmon",
       "version", "wininet"
     }
     -- this is to prevent dll hijacking
-    linkoptions { "/DELAYLOAD:gdiplus.dll /DELAYLOAD:msimg32.dll /DELAYLOAD:shlwapi.dll /DELAYLOAD:urlmon.dll /DELAYLOAD:version.dll /DELAYLOAD:wininet.dll"}
+    linkoptions { "/DELAYLOAD:gdiplus.dll /DELAYLOAD:msimg32.dll /DELAYLOAD:shlwapi.dll /DELAYLOAD:urlmon.dll /DELAYLOAD:version.dll /DELAYLOAD:wininet.dll /DELAYLOAD:libmupdf.dll"}
+    dependson { "PdfFilter", "PdfPreview" }
+    filter "platforms:x32"
+      prebuildcommands { "cd %{cfg.targetdir} & ..\\bin\\MakeLZSA.exe InstallerData.dat libmupdf.dll:libmupdf.dll PdfFilter.dll:PdfFilter.dll PdfPreview.dll:PdfPreview.dll ..\\mupdf\\resources\\fonts\\droid\\DroidSansFallback.ttf:DroidSansFallback.ttf ..\\ext\\UnrarDLL\\UnRAR.dll:UnRAR.dll"  }
+    filter {}
+    filter "platforms:x64"
+      prebuildcommands { "cd %{cfg.targetdir} & ..\\bin\\MakeLZSA.exe InstallerData.dat libmupdf.dll:libmupdf.dll PdfFilter.dll:PdfFilter.dll PdfPreview.dll:PdfPreview.dll ..\\mupdf\\resources\\fonts\\droid\\DroidSansFallback.ttf:DroidSansFallback.ttf ..\\ext\\UnrarDLL\\x64\\UnRAR64.dll:UnRAR64.dll"  }
+    filter {}
 
 
+--[[
   project "Uninstaller"
     kind "WindowedApp"
     language "C++"
@@ -576,8 +619,9 @@ workspace "SumatraPDF"
     links {
       "comctl32", "gdiplus", "shlwapi", "version", "wininet"
     }
+--]]
 
-
+--[[
   -- faster to compile than Installer
   project "InstallerNoData"
     kind "WindowedApp"
@@ -597,8 +641,9 @@ workspace "SumatraPDF"
     }
     -- this is to prevent dll hijacking
     linkoptions { "/DELAYLOAD:gdiplus.dll /DELAYLOAD:shlwapi.dll /DELAYLOAD:version.dll /DELAYLOAD:wininet.dll"}
+--]]
 
-
+--[[
   project "Installer"
     kind "WindowedApp"
     language "C++"
@@ -621,6 +666,7 @@ workspace "SumatraPDF"
 
     dependson { "SumatraPDF-no-MUPDF", "PdfFilter", "PdfPreview", "Uninstaller" }
     prebuildcommands { "cd %{cfg.targetdir} & ..\\bin\\MakeLZSA.exe InstallerData.dat SumatraPDF-no-MUPDF.exe:SumatraPDF.exe libmupdf.dll:libmupdf.dll PdfFilter.dll:PdfFilter.dll PdfPreview.dll:PdfPreview.dll Uninstaller.exe:uninstall.exe ..\\mupdf\\resources\\fonts\\droid\\DroidSansFallback.ttf:DroidSansFallback.ttf"  }
+--]]
 
   project "TestApp"
     kind "WindowedApp"
@@ -635,6 +681,7 @@ workspace "SumatraPDF"
       "version", "wininet", "d2d1.lib",
     }
 
+--[[
   -- dummy project that builds all other projects
   project "all"
     kind "ConsoleApp"
@@ -642,8 +689,10 @@ workspace "SumatraPDF"
     -- premake has logic in vs2010_vcxproj.lua that only sets PlatformToolset
     -- if there is a c/c++ file, so we add a no-op cpp file to force This logic
     files { "tools/premake/no_op_console.c" }
+    -- dependson { "PdfPreview", "PdfFilter", } -- SumatraPDF depends on those
     dependson {
-      "PdfPreview", "PdfFilter", "SumatraPDF", "SumatraPDF-no-MUPDF",
-      "test_util", "cmapdump", "signfile", "plugin-test", "MakeLZSA",
-      "mutool", "mudraw", "Uninstaller", "enginedump", "efi", "unarr"
+      "SumatraPDF", "test_util", "plugin-test",
+      "MakeLZSA", "enginedump", "unarr", "TestApp"
     }
+    -- dependson { "signfile", "mutool", "mudraw", "efi", "cmapdump", }
+--]]
