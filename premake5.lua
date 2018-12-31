@@ -681,8 +681,10 @@ workspace "SumatraPDF"
       "version", "wininet", "d2d1.lib",
     }
 
---[[
-  -- dummy project that builds all other projects
+  -- dummy project that builds all other projects, used in
+  -- appveyor build script.
+  -- TOOD: have appveyor build the solution instead and
+  -- remove this project
   project "all"
     kind "ConsoleApp"
     language "C"
@@ -695,4 +697,3 @@ workspace "SumatraPDF"
       "MakeLZSA", "enginedump", "unarr", "TestApp"
     }
     -- dependson { "signfile", "mutool", "mudraw", "efi", "cmapdump", }
---]]
