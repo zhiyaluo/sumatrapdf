@@ -181,9 +181,10 @@ Corrupted:
 
 /* Caller needs to free() the result. */
 static WCHAR* GetDefaultPdfViewer() {
-    AutoFreeW buf(ReadRegStr(HKEY_CURRENT_USER, REG_EXPLORER_PDF_EXT L"\\UserChoice", PROG_ID));
-    if (buf)
-        return buf.StealData();
+    WCHAR* buf = ReadRegStr(HKEY_CURRENT_USER, REG_EXPLORER_PDF_EXT L"\\UserChoice", PROG_ID);
+    if (buf) {
+        return buf;
+    }
     return ReadRegStr(HKEY_CLASSES_ROOT, L".pdf", nullptr);
 }
 
@@ -195,16 +196,18 @@ static bool IsBrowserPluginInstalled() {
 static bool IsPdfFilterInstalled() {
     const WCHAR* key = L".pdf\\PersistentHandler";
     AutoFreeW handler_iid(ReadRegStr(HKEY_CLASSES_ROOT, key, nullptr));
-    if (!handler_iid)
+    if (!handler_iid) {
         return false;
+    }
     return str::EqI(handler_iid, SZ_PDF_FILTER_HANDLER);
 }
 
 static bool IsPdfPreviewerInstalled() {
     const WCHAR* key = L".pdf\\shellex\\{8895b1c6-b41f-4c1c-a562-0d564250836f}";
     AutoFreeW handler_iid(ReadRegStr(HKEY_CLASSES_ROOT, key, nullptr));
-    if (!handler_iid)
+    if (!handler_iid) {
         return false;
+    }
     return str::EqI(handler_iid, SZ_PDF_PREVIEW_CLSID);
 }
 
@@ -214,8 +217,9 @@ static DWORD GetDirSize(const WCHAR* dir) {
     WIN32_FIND_DATA findData;
 
     HANDLE h = FindFirstFile(dirPattern, &findData);
-    if (h == INVALID_HANDLE_VALUE)
+    if (h == INVALID_HANDLE_VALUE) {
         return 0;
+    }
 
     DWORD totalSize = 0;
     do {
@@ -316,8 +320,9 @@ static bool WriteExtendedFileExtensionInfo(HKEY hkey) {
     bool ok = true;
 
     AutoFreeW exePath(GetInstalledExePath());
-    if (HKEY_LOCAL_MACHINE == hkey)
+    if (HKEY_LOCAL_MACHINE == hkey) {
         ok &= WriteRegStr(hkey, L"Software\\Microsoft\\Windows\\CurrentVersion\\App Paths\\" EXENAME, nullptr, exePath);
+    }
 
     // mirroring some of what DoAssociateExeWithPdfExtension() does (cf. AppTools.cpp)
     AutoFreeW iconPath(str::Join(exePath, L",1"));
@@ -518,8 +523,9 @@ static void OnButtonStartSumatra() {
 }
 
 static void EnableAndShow(HWND hwnd, bool enable) {
-    if (!hwnd)
+    if (!hwnd) {
         return;
+    }
     win::SetVisibility(hwnd, enable);
     EnableWindow(hwnd, enable);
 }
@@ -577,10 +583,11 @@ static int CALLBACK BrowseCallbackProc(HWND hwnd, UINT msg, LPARAM lParam, LPARA
 
 static BOOL BrowseForFolder(HWND hwnd, const WCHAR* lpszInitialFolder, const WCHAR* lpszCaption, WCHAR* lpszBuf,
                             DWORD dwBufSize) {
-    if (lpszBuf == nullptr || dwBufSize < MAX_PATH)
+    if (lpszBuf == nullptr || dwBufSize < MAX_PATH) {
         return FALSE;
+    }
 
-    BROWSEINFO bi = {0};
+    BROWSEINFO bi{};
     bi.hwndOwner = hwnd;
     bi.ulFlags = BIF_RETURNONLYFSDIRS | BIF_NEWDIALOGSTYLE;
     bi.lpszTitle = lpszCaption;
@@ -605,8 +612,9 @@ static BOOL BrowseForFolder(HWND hwnd, const WCHAR* lpszInitialFolder, const WCH
 static void OnButtonBrowse() {
     AutoFreeW installDir(win::GetText(gHwndTextboxInstDir));
     // strip a trailing "\SumatraPDF" if that directory doesn't exist (yet)
-    if (!dir::Exists(installDir))
+    if (!dir::Exists(installDir)) {
         installDir.Set(path::GetDir(installDir));
+    }
 
     WCHAR path[MAX_PATH];
     BOOL ok = BrowseForFolder(gHwndFrame, installDir, _TR("Select the folder where SumatraPDF should be installed:"),
@@ -619,13 +627,15 @@ static void OnButtonBrowse() {
     WCHAR* installPath = path;
     // force paths that aren't entered manually to end in ...\SumatraPDF
     // to prevent unintended installations into e.g. %ProgramFiles% itself
-    if (!str::EndsWithI(path, L"\\" APP_NAME_STR))
+    if (!str::EndsWithI(path, L"\\" APP_NAME_STR)) {
         installPath = path::Join(path, APP_NAME_STR);
+    }
     win::SetText(gHwndTextboxInstDir, installPath);
     Edit_SetSel(gHwndTextboxInstDir, 0, -1);
     SetFocus(gHwndTextboxInstDir);
-    if (installPath != path)
-        free(installPath);
+    if (installPath != path) {
+        str::Free(installPath);
+    }
 }
 
 static bool OnWmCommand(WPARAM wParam) {
@@ -774,10 +784,13 @@ static void OnCreateWindow(HWND hwnd) {
 static void CreateMainWindow() {
     AutoFreeW title(str::Format(_TR("SumatraPDF %s Installer"), CURR_VERSION_STR));
 
-    gHwndFrame = CreateWindowEx(trans::IsCurrLangRtl() ? WS_EX_LAYOUTRTL : 0, INSTALLER_FRAME_CLASS_NAME, title.Get(),
-                                WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU, CW_USEDEFAULT, CW_USEDEFAULT,
-                                dpiAdjust(INSTALLER_WIN_DX), dpiAdjust(INSTALLER_WIN_DY), nullptr, nullptr,
-                                GetModuleHandle(nullptr), nullptr);
+    DWORD dwFlags = WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU;
+    DWORD dwExFlags = trans::IsCurrLangRtl() ? WS_EX_LAYOUTRTL : 0;
+    int dx = dpiAdjust(INSTALLER_WIN_DX);
+    int dy = dpiAdjust(INSTALLER_WIN_DY);
+    auto h = GetModuleHandle(nullptr);
+    gHwndFrame = CreateWindowEx(dwExFlags, INSTALLER_FRAME_CLASS_NAME, title.Get(), dwFlags, CW_USEDEFAULT,
+                                CW_USEDEFAULT, dx, dy, nullptr, nullptr, h, nullptr);
 }
 
 static void ShowUsage() {
