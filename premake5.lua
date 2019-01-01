@@ -314,7 +314,6 @@ workspace "SumatraPDF"
     }
 
 --[[
-  -- TODO: move directly into SumatraPDF
   project "synctex"
     kind "StaticLib"
     language "C"
@@ -335,7 +334,6 @@ workspace "SumatraPDF"
     utils_files()
 
 
-  -- TODO: move directly into SumatraPDF
 --[[
   project "mui"
     kind "StaticLib"
@@ -346,7 +344,6 @@ workspace "SumatraPDF"
 --]]
 
 
-  -- TODO: move directly into SumatraPDF
 --[[
   project "uia"
     kind "StaticLib"
@@ -359,7 +356,6 @@ workspace "SumatraPDF"
 
 
 --[[
-  -- TODO: move directly into SumatraPDF
   project "sumatra"
     kind "StaticLib"
     language "C++"
