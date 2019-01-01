@@ -55,6 +55,9 @@ class AutoFreeStr {
     AutoFreeStr() = default;
     explicit AutoFreeStr(T* ptr) : ptr(ptr) {}
     ~AutoFreeStr() { free(this->ptr); }
+
+    AutoFreeStr(const AutoFreeStr&) = default;
+
     void Set(T* newPtr) {
         free(this->ptr);
         this->ptr = newPtr;

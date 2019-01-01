@@ -586,7 +586,6 @@ int APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 #endif
 
     SetupCrashHandler();
-    ExtractUnrar();
 
     ScopedOle ole;
     InitAllCommonControls();
@@ -594,8 +593,10 @@ int APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
     mui::Initialize();
     uitask::Initialize();
 
-    CommandLineInfo i;
-    i.ParseCommandLine(GetCommandLine());
+    auto i = ParseCommandLine(GetCommandLine());
+
+    ExtractUnrar();
+
 
     if (i.testRenderPage) {
         TestRenderPage(i);
@@ -796,12 +797,10 @@ Exit:
     }
 
 #ifndef DEBUG
-
     // leave all the remaining clean-up to the OS
     // (as recommended for a quick exit)
     ExitProcess(retCode);
-
-#else
+#endif
 
     DeleteCachedCursors();
     DeleteObject(GetDefaultGuiFont());
@@ -840,5 +839,4 @@ Exit:
     _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 
     return retCode;
-#endif
 }
