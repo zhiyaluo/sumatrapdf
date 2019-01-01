@@ -578,10 +578,10 @@ function sumatrapdf_files()
     "src/SumatraPDF.cpp",
     "src/SumatraStartup.cpp",
     "src/Tests.cpp",
-    "src/installer/Installer.h",
-    "src/installer/Installer.cpp",
-    "src/installer/Uninstaller.cpp",
-    "src/installer/InstUninstCommon.cpp",
+    "src/Installer.h",
+    "src/Installer.cpp",
+    "src/Uninstaller.cpp",
+    "src/InstUninstCommon.cpp",
     "src/SumatraPDF.rc",
   }
 end

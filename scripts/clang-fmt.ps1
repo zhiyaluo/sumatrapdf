@@ -15,8 +15,6 @@ $files =
 "src\utils\tests\*.h",
 "src\wingui\*.cpp",
 "src\wingui\*.h",
-"src\installer\*.cpp",
-"src\installer\*.h",
 "src\tools\*.cpp"
 "src\tools\*.h"
 

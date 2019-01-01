@@ -39,7 +39,7 @@ INCOMPLETE_MISSING_THRESHOLD = 0.2
 
 SRC_DIR = os.path.join(os.path.dirname(__file__), "..", "src")
 
-C_DIRS_TO_PROCESS = [".", "installer"]
+C_DIRS_TO_PROCESS = ["."]
 
 
 def should_translate(file_name):
