@@ -91,10 +91,10 @@ static const char* unrarFileName = "UnRAR.dll";
 // When a file is no longer shipped, just disable the install flag so that the
 // file is still correctly removed when SumatraPDF is eventually uninstalled.
 PayloadInfo gPayloadData[] = {
-    {"libmupdf.dll", true},         {"SumatraPDF.exe", true},
+    {"libmupdf.dll", true},         {"SumatraPDF.exe", false},
     {"sumatrapdfprefs.dat", false}, {"DroidSansFallback.ttf", true},
     {"npPdfViewer.dll", false},     {"PdfFilter.dll", true},
-    {"PdfPreview.dll", true},       {"uninstall.exe", true},
+    {"PdfPreview.dll", true},       {"uninstall.exe", false},
     {unrarFileName, true},          {nullptr, false},
 };
 
@@ -170,17 +170,16 @@ WCHAR* GetUninstallerPath() {
 
 WCHAR* GetShortcutPath(bool allUsers) {
     // CSIDL_COMMON_PROGRAMS => installing for all users
-    AutoFreeW dir(GetSpecialFolder(allUsers ? CSIDL_COMMON_PROGRAMS : CSIDL_PROGRAMS));
-    if (!dir)
+    auto folder = allUsers ? CSIDL_COMMON_PROGRAMS : CSIDL_PROGRAMS;
+    AutoFreeW dir(GetSpecialFolder(folder, false));
+    if (!dir) {
         return nullptr;
+    }
     return path::Join(dir, APP_NAME_STR L".lnk");
 }
 
 WCHAR* GetInstalledBrowserPluginPath() {
-    WCHAR* path = ReadRegStr(HKEY_LOCAL_MACHINE, REG_PATH_PLUGIN, L"Path");
-    if (!path)
-        path = ReadRegStr(HKEY_CURRENT_USER, REG_PATH_PLUGIN, L"Path");
-    return path;
+    return ReadRegStr2(HKEY_LOCAL_MACHINE, HKEY_CURRENT_USER, REG_PATH_PLUGIN, L"Path");
 }
 
 static bool IsUsingInstallation(DWORD procId) {

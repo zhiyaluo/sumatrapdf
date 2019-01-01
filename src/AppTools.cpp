@@ -57,7 +57,7 @@ bool IsRunningInPortableMode() {
     }
 
     AutoFreeW exePath(GetExePath());
-    AutoFreeW programFilesDir(GetSpecialFolder(CSIDL_PROGRAM_FILES));
+    AutoFreeW programFilesDir(GetSpecialFolder(CSIDL_PROGRAM_FILES, false));
     // if we can't get a path, assume we're not running from "Program Files"
     if (!exePath || !programFilesDir) {
         return true;
@@ -113,18 +113,20 @@ WCHAR* AppGenDataFilename(const WCHAR* fileName) {
 }
 
 WCHAR* PathForFileInAppDataDir(const WCHAR* fileName) {
-    if (!fileName)
+    if (!fileName) {
         return nullptr;
+    }
 
     /* Use local (non-roaming) app data directory */
     WCHAR* dataDir = GetSpecialFolder(CSIDL_LOCAL_APPDATA, true);
     WCHAR* dir = path::Join(dataDir, APP_NAME_STR);
-    free(dataDir);
+    str::Free(dataDir);
 
     defer { str::Free(dir); };
     bool ok = dir::Create(dir);
-    if (!ok)
+    if (!ok) {
         return nullptr;
+    }
 
     return path::Join(dir, fileName);
 }

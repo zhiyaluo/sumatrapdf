@@ -54,8 +54,9 @@ static WCHAR* GetValidTempDir() {
 
 static WCHAR* GetTempUninstallerPath() {
     AutoFreeW tempDir(GetValidTempDir());
-    if (!tempDir)
+    if (!tempDir) {
         return nullptr;
+    }
     // Using fixed (unlikely) name instead of GetTempFileName()
     // so that we don't litter temp dir with copies of ourselves
     return path::Join(tempDir, L"sum~inst.exe");

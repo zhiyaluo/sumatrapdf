@@ -221,6 +221,14 @@ TryAgainWOW64:
     return val;
 }
 
+WCHAR* ReadRegStr2(HKEY keySub1, HKEY keySub2, const WCHAR* keyName, const WCHAR* valName) {
+    WCHAR* res = ReadRegStr(keySub1, keyName, valName);
+    if (!res) {
+        res = ReadRegStr(keySub2, keyName, valName);
+    }
+    return res;
+}
+
 bool WriteRegStr(HKEY keySub, const WCHAR* keyName, const WCHAR* valName, const WCHAR* value) {
     DWORD cbData = (DWORD)(str::Len(value) + 1) * sizeof(WCHAR);
     LSTATUS res = SHSetValueW(keySub, keyName, valName, REG_SZ, (const void*)value, cbData);
@@ -274,12 +282,14 @@ bool DeleteRegKey(HKEY keySub, const WCHAR* keyName, bool resetACLFirst) {
 }
 
 WCHAR* GetSpecialFolder(int csidl, bool createIfMissing) {
-    if (createIfMissing)
+    if (createIfMissing) {
         csidl = csidl | CSIDL_FLAG_CREATE;
+    }
     WCHAR path[MAX_PATH] = {0};
     HRESULT res = SHGetFolderPath(nullptr, csidl, nullptr, 0, path);
-    if (S_OK != res)
+    if (S_OK != res) {
         return nullptr;
+    }
     return str::Dup(path);
 }
 

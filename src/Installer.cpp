@@ -34,8 +34,8 @@ The installer is good enough for production but it doesn't mean it couldn't be i
 #include "utils/ByteOrderDecoder.h"
 #include "utils/LzmaSimpleArchive.h"
 
-#include "../ifilter/PdfFilter.h"
-#include "../previewer/PdfPreview.h"
+#include "ifilter/PdfFilter.h"
+#include "previewer/PdfPreview.h"
 
 struct InstallerGlobals {
     bool registerAsDefault;
@@ -145,8 +145,17 @@ static bool IsValidInstaller()
 }
 #endif
 
+static bool CopySelf() {
+    // TODO: copy our own executable as SumatraPDF.exe
+    return false;
+}
+
 static bool InstallCopyFiles() {
-    bool ok;
+    bool ok = CopySelf();
+    if (!ok) {
+        return false;
+    }
+
     HGLOBAL res = 0;
     defer {
         if (res != 0)
@@ -370,15 +379,19 @@ static DWORD WINAPI InstallerThread(LPVOID data) {
     UNUSED(data);
     gInstUninstGlobals.success = false;
 
-    if (!CreateInstallationDirectory())
+    if (!CreateInstallationDirectory()) {
         goto Error;
+    }
     ProgressStep();
 
-    if (!InstallCopyFiles())
+    if (!InstallCopyFiles()) {
         goto Error;
+    }
+
     // all files have been extracted at this point
-    if (gInstallerGlobals.justExtractFiles)
+    if (gInstallerGlobals.justExtractFiles) {
         return 0;
+    }
 
     if (gInstallerGlobals.registerAsDefault) {
         // need to sublaunch SumatraPDF.exe instead of replicating the code
@@ -815,14 +828,19 @@ static WCHAR* GetInstallationDir() {
         if (str::EndsWithI(dir, L".exe")) {
             dir.Set(path::GetDir(dir));
         }
-        if (!str::IsEmpty(dir.Get()) && dir::Exists(dir))
+        if (!str::IsEmpty(dir.Get()) && dir::Exists(dir)) {
             return dir.StealData();
+        }
     }
 
-    // fall back to %ProgramFiles%
-    dir.Set(GetSpecialFolder(CSIDL_PROGRAM_FILES));
-    if (dir)
-        return path::Join(dir, APP_NAME_STR);
+    // fall back to %APPLOCALDATA%\SumatraPDF
+    WCHAR* dataDir = GetSpecialFolder(CSIDL_LOCAL_APPDATA, true);
+    if (dataDir) {
+        WCHAR* res = path::Join(dataDir, APP_NAME_STR);
+        str::Free(dataDir);
+        return res;
+    }
+
     // fall back to C:\ as a last resort
     return str::Dup(L"C:\\" APP_NAME_STR);
 }
@@ -995,7 +1013,7 @@ static void ParseCommandLine(WCHAR* cmdLine) {
 int RunInstaller() {
     // TODO: maybe only launch elevated if needs to write
     // to a priviledged destination
-    if (!IsRunningElevated()) {
+    if (false && !IsRunningElevated()) {
         WCHAR* exePath = GetExePath();
         WCHAR* cmdline = GetCommandLineW(); // not owning the memory
         LaunchElevated(exePath, cmdline);
