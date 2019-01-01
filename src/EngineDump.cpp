@@ -431,7 +431,8 @@ int main(int argc, char** argv) {
     ParseCmdLine(GetCommandLine(), argList);
     if (argList.size() < 2) {
     Usage:
-        ErrOut("%s [-pwd <password>][-quick][-render <path-%%d.tga>] <filename>", path::GetBaseName(argList.at(0)));
+        ErrOut("%s [-pwd <password>][-quick][-render <path-%%d.tga>] <filename>",
+               path::GetBaseNameNoFree(argList.at(0)));
         return 2;
     }
 
@@ -520,7 +521,7 @@ int main(int argc, char** argv) {
     }
 #endif
     if (!engine) {
-        ErrOut("Error: Couldn't create an engine for %s!", path::GetBaseName(filePath));
+        ErrOut("Error: Couldn't create an engine for %s!", path::GetBaseNameNoFree(filePath));
         return 1;
     }
     Vec<PageAnnotation>* userAnnots = LoadFileModifications(engine->FileName());

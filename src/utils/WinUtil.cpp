@@ -345,8 +345,10 @@ WCHAR* GetExePath() {
 Caller needs to free()
 */
 WCHAR* GetExeDir() {
-    std::unique_ptr<WCHAR> path(GetExePath());
-    return path::GetDir(path.get());
+    WCHAR* path = GetExePath();
+    auto* res = path::GetDir(path);
+    str::Free(path);
+    return res;
 }
 
 /*
@@ -518,35 +520,6 @@ DWORD GetFileVersion(const WCHAR* path) {
     }
 
     return fileVersion;
-}
-
-bool LaunchFile(const WCHAR* path, const WCHAR* params, const WCHAR* verb, bool hidden) {
-    if (!path)
-        return false;
-
-    SHELLEXECUTEINFO sei = {0};
-    sei.cbSize = sizeof(sei);
-    sei.fMask = SEE_MASK_FLAG_NO_UI;
-    sei.lpVerb = verb;
-    sei.lpFile = path;
-    sei.lpParameters = params;
-    sei.nShow = hidden ? SW_HIDE : SW_SHOWNORMAL;
-    return ShellExecuteEx(&sei);
-}
-
-HANDLE LaunchProcess(const WCHAR* cmdLine, const WCHAR* currDir, DWORD flags) {
-    PROCESS_INFORMATION pi = {0};
-    STARTUPINFO si = {0};
-    si.cb = sizeof(si);
-
-    // CreateProcess() might modify cmd line argument, so make a copy
-    // in case caller provides a read-only string
-    AutoFreeW cmdLineCopy(str::Dup(cmdLine));
-    if (!CreateProcessW(nullptr, cmdLineCopy, nullptr, nullptr, FALSE, flags, nullptr, currDir, &si, &pi))
-        return nullptr;
-
-    CloseHandle(pi.hThread);
-    return pi.hProcess;
 }
 
 /* Ensure that the rectangle is at least partially in the work area on a
@@ -1446,6 +1419,66 @@ BOOL SafeDestroyWindow(HWND* hwnd) {
     BOOL ok = DestroyWindow(*hwnd);
     *hwnd = nullptr;
     return ok;
+}
+
+bool LaunchFile(const WCHAR* path, const WCHAR* params, const WCHAR* verb, bool hidden) {
+    if (!path)
+        return false;
+
+    SHELLEXECUTEINFO sei = {0};
+    sei.cbSize = sizeof(sei);
+    sei.fMask = SEE_MASK_FLAG_NO_UI;
+    sei.lpVerb = verb;
+    sei.lpFile = path;
+    sei.lpParameters = params;
+    sei.nShow = hidden ? SW_HIDE : SW_SHOWNORMAL;
+    BOOL ok = ShellExecuteEx(&sei);
+    return !!ok;
+}
+
+HANDLE LaunchProcess(const WCHAR* cmdLine, const WCHAR* currDir, DWORD flags) {
+    PROCESS_INFORMATION pi = {0};
+    STARTUPINFO si = {0};
+    si.cb = sizeof(si);
+
+    // CreateProcess() might modify cmd line argument, so make a copy
+    // in case caller provides a read-only string
+    AutoFreeW cmdLineCopy(str::Dup(cmdLine));
+    if (!CreateProcessW(nullptr, cmdLineCopy, nullptr, nullptr, FALSE, flags, nullptr, currDir, &si, &pi))
+        return nullptr;
+
+    CloseHandle(pi.hThread);
+    return pi.hProcess;
+}
+
+// return true if the app is running in elevated (as admin)
+bool IsRunningElevated() {
+    BOOL fIsRunAsAdmin = FALSE;
+    PSID pAdministratorsGroup = NULL;
+
+    // Allocate and initialize a SID of the administrators group.
+    SID_IDENTIFIER_AUTHORITY NtAuthority = SECURITY_NT_AUTHORITY;
+    if (!AllocateAndInitializeSid(&NtAuthority, 2, SECURITY_BUILTIN_DOMAIN_RID, DOMAIN_ALIAS_RID_ADMINS, 0, 0, 0, 0, 0,
+                                  0, &pAdministratorsGroup)) {
+        goto Cleanup;
+    }
+
+    // Determine whether the SID of administrators group is enabled in
+    // the primary access token of the process.
+    if (!CheckTokenMembership(NULL, pAdministratorsGroup, &fIsRunAsAdmin)) {
+        goto Cleanup;
+    }
+
+Cleanup:
+    if (pAdministratorsGroup) {
+        FreeSid(pAdministratorsGroup);
+    }
+
+    return !!fIsRunAsAdmin;
+}
+
+bool LaunchElevated(const WCHAR* path, const WCHAR* cmdline) {
+    return LaunchFile(path, cmdline, L"runas");
 }
 
 // based on http://mdb-blog.blogspot.com/2013/01/nsis-lunch-program-as-user-from-uac.html

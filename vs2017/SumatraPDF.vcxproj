@@ -476,6 +476,8 @@
     <ClCompile Include="..\src\Trans_sumatra_txt.cpp" />
     <ClCompile Include="..\src\Translations.cpp" />
     <ClCompile Include="..\src\WindowInfo.cpp" />
+    <ClCompile Include="..\src\installer\InstUninstCommon.cpp" />
+    <ClCompile Include="..\src\installer\Installer.cpp" />
     <ClCompile Include="..\src\mui\Mui.cpp" />
     <ClCompile Include="..\src\mui\MuiBase.cpp" />
     <ClCompile Include="..\src\mui\MuiButton.cpp" />

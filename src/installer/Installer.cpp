@@ -869,7 +869,7 @@ static LRESULT CALLBACK WndProcFrame(HWND hwnd, UINT message, WPARAM wParam, LPA
 }
 
 static bool RegisterWinClass() {
-    WNDCLASSEX wcex;
+    WNDCLASSEX wcex{};
 
     FillWndClassEx(wcex, INSTALLER_FRAME_CLASS_NAME, WndProcFrame);
     auto h = GetModuleHandle(nullptr);
@@ -984,76 +984,32 @@ static void ParseCommandLine(WCHAR* cmdLine) {
     }
 }
 
-#define CRASH_DUMP_FILE_NAME L"suminstaller.dmp"
-
-// no-op but must be defined for CrashHandler.cpp
-void ShowCrashHandlerMessage() {}
-void GetStressTestInfo(str::Str<char>* s) {
-    UNUSED(s);
-}
-
-void GetProgramInfo(str::Str<char>& s) {
-    s.AppendFmt("Ver: %s", CURR_VERSION_STRA);
-#ifdef SVN_PRE_RELEASE_VER
-    s.AppendFmt(" pre-release");
-#endif
-    if (IsProcess64()) {
-        s.Append(" 64-bit");
+int RunInstaller() {
+    // TODO: maybe only launch elevated if needs to write
+    // to a priviledged destination
+    if (!IsRunningElevated()) {
+        WCHAR* exePath = GetExePath();
+        WCHAR* cmdline = GetCommandLineW(); // not owning the memory
+        LaunchElevated(exePath, cmdline);
+        str::Free(exePath);
+        return 0;
     }
-#ifdef DEBUG
-    if (!str::Find(s.Get(), " (dbg)"))
-        s.Append(" (dbg)");
-#endif
-    s.Append("\r\n");
-#if defined(GIT_COMMIT_ID)
-    const char* gitSha1 = QM(GIT_COMMIT_ID);
-    s.AppendFmt("Git: %s (https://github.com/sumatrapdfreader/sumatrapdf/tree/%s)\r\n", gitSha1, gitSha1);
-#endif
-}
 
-bool CrashHandlerCanUseNet() {
-    return true;
-}
-
-static void InstallInstallerCrashHandler() {
-    // save symbols directly into %TEMP% (so that the installer doesn't
-    // unnecessarily leave an empty directory behind if it doesn't have to)
-    AutoFreeW tempDir(path::GetTempPath());
-    if (!tempDir || !dir::Exists(tempDir))
-        tempDir.Set(GetSpecialFolder(CSIDL_LOCAL_APPDATA, true));
-    {
-        if (!tempDir || !dir::Exists(tempDir))
-            return;
-    }
-    AutoFreeW crashDumpPath(path::Join(tempDir, CRASH_DUMP_FILE_NAME));
-    InstallCrashHandler(crashDumpPath, tempDir);
-}
-
-int APIENTRY WinMain(HINSTANCE /*hInstance*/, HINSTANCE /*hPrevInstance*/, LPSTR /* lpCmdLine*/, int nCmdShow) {
-    UNUSED(nCmdShow);
     int ret = 1;
 
-    SetErrorMode(SEM_NOOPENFILEERRORBOX | SEM_FAILCRITICALERRORS);
-
+    // TODO: not sure if needed given that NoDllHijacking()
+    // was already called
+#if 0
     // Change current directory to prevent dll hijacking.
     // LoadLibrary first loads from current directory which could be
     // browser's download directory, which is an easy target
     // for attackers to put their own fake dlls).
     // For this to work we also have to /delayload all libraries otherwise
     // they will be loaded even before WinMain executes.
-    auto currDir = GetSystem32Dir();
+    auto* currDir = GetSystem32Dir();
     SetCurrentDirectoryW(currDir);
-    free(currDir);
-
-    InitDynCalls();
-    NoDllHijacking();
-
-    ScopedCom com;
-    InitAllCommonControls();
-    ScopedGdiPlus gdi;
-
-    // TOOD: remove as there'll be just one app
-    InstallInstallerCrashHandler();
+    str::Free(currDir);
+#endif
 
     ParseCommandLine(GetCommandLine());
     if (gInstUninstGlobals.showUsageAndQuit) {
@@ -1061,8 +1017,10 @@ int APIENTRY WinMain(HINSTANCE /*hInstance*/, HINSTANCE /*hPrevInstance*/, LPSTR
         ret = 0;
         goto Exit;
     }
-    if (!gInstUninstGlobals.installDir)
+
+    if (!gInstUninstGlobals.installDir) {
         gInstUninstGlobals.installDir = GetInstallationDir();
+    }
 
     if (gInstUninstGlobals.silent) {
         // make sure not to uninstall the plugins during silent installation
@@ -1075,16 +1033,17 @@ int APIENTRY WinMain(HINSTANCE /*hInstance*/, HINSTANCE /*hPrevInstance*/, LPSTR
         goto Exit;
     }
 
-    if (!RegisterWinClass())
+    if (!RegisterWinClass()) {
         goto Exit;
+    }
 
-    if (!InstanceInit())
+    if (!InstanceInit()) {
         goto Exit;
+    }
 
     ret = RunApp();
 
 Exit:
-    trans::Destroy();
     free(gInstUninstGlobals.installDir);
     free(gInstUninstGlobals.firstError);
 

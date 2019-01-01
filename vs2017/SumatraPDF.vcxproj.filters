@@ -13,6 +13,9 @@
     <Filter Include="src">
       <UniqueIdentifier>{2DAB880B-99B4-887C-2230-9F7C8E38947C}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\installer">
+      <UniqueIdentifier>{EACC4227-568D-BE5D-1FC8-07DB8B47033A}</UniqueIdentifier>
+    </Filter>
     <Filter Include="src\mui">
       <UniqueIdentifier>{A71E30A9-13FE-AE44-1C16-3A1B887415A6}</UniqueIdentifier>
     </Filter>
@@ -367,6 +370,12 @@
     </ClCompile>
     <ClCompile Include="..\src\WindowInfo.cpp">
       <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\installer\InstUninstCommon.cpp">
+      <Filter>src\installer</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\installer\Installer.cpp">
+      <Filter>src\installer</Filter>
     </ClCompile>
     <ClCompile Include="..\src\mui\Mui.cpp">
       <Filter>src\mui</Filter>

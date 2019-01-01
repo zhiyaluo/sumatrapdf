@@ -80,9 +80,6 @@ RectI GetWorkAreaRect(RectI rect);
 RectI GetFullscreenRect(HWND);
 RectI GetVirtualScreenRect();
 
-bool LaunchFile(const WCHAR* path, const WCHAR* params = nullptr, const WCHAR* verb = nullptr, bool hidden = false);
-HANDLE LaunchProcess(const WCHAR* cmdLine, const WCHAR* currDir = nullptr, DWORD flags = 0);
-
 void PaintRect(HDC, const RectI&);
 void PaintLine(HDC, const RectI&);
 void DrawCenteredText(HDC hdc, const RectI& r, const WCHAR* txt, bool isRTL = false);
@@ -204,6 +201,10 @@ unsigned char* SerializeBitmap(HBITMAP hbmp, size_t* bmpBytesOut);
 HBITMAP CreateMemoryBitmap(SizeI size, HANDLE* hDataMapping = nullptr);
 double GetProcessRunningTime();
 
+bool LaunchFile(const WCHAR* path, const WCHAR* params = nullptr, const WCHAR* verb = nullptr, bool hidden = false);
+HANDLE LaunchProcess(const WCHAR* cmdLine, const WCHAR* currDir = nullptr, DWORD flags = 0);
+bool IsRunningElevated();
+bool LaunchElevated(const WCHAR* path, const WCHAR* cmdline);
 void RunNonElevated(const WCHAR* exePath);
 void VariantInitBstr(VARIANT& urlVar, const WCHAR* s);
 char* LoadTextResource(int resId, size_t* sizeOut = nullptr);

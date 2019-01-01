@@ -530,6 +530,20 @@ static void ExtractUnrar() {
     str::Free(path);
 }
 
+// we're in installer mode if the name of the executable
+// has "install" string in it e.g. SumatraPDF-installer.exe
+static bool IsInstaller() {
+    WCHAR* exePath = GetExePath();
+    WCHAR* exeName = path::GetBaseName(exePath);
+    bool isInstaller = str::FindI(exeName, L"install");
+    str::Free(exeName);
+    str::Free(exePath);
+    return isInstaller;
+}
+
+// in Installer.cpp
+extern int RunInstaller();
+
 int APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPSTR cmdLine,
                      _In_ int nCmdShow) {
     UNUSED(hPrevInstance);
@@ -560,6 +574,27 @@ int APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
     // without a cd).
     SetErrorMode(SEM_NOOPENFILEERRORBOX | SEM_FAILCRITICALERRORS);
 
+    srand((unsigned int)time(nullptr));
+
+#ifdef DEBUG
+    dbghelp::RememberCallstackLogs();
+#endif
+
+    SetupCrashHandler();
+
+    ScopedOle ole;
+    InitAllCommonControls();
+    ScopedGdiPlus gdiPlus(true);
+    mui::Initialize();
+    uitask::Initialize();
+
+    auto i = ParseCommandLine(GetCommandLine());
+
+    if (IsInstaller()) {
+        retCode = RunInstaller();
+        goto Exit;
+    }
+
 #if defined(DEBUG) || defined(SVN_PRE_RELEASE_VER)
     if (str::StartsWith(cmdLine, "/tester")) {
         extern int TesterMain(); // in Tester.cpp
@@ -579,24 +614,7 @@ int APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
     }
 #endif
 
-    srand((unsigned int)time(nullptr));
-
-#ifdef DEBUG
-    dbghelp::RememberCallstackLogs();
-#endif
-
-    SetupCrashHandler();
-
-    ScopedOle ole;
-    InitAllCommonControls();
-    ScopedGdiPlus gdiPlus(true);
-    mui::Initialize();
-    uitask::Initialize();
-
-    auto i = ParseCommandLine(GetCommandLine());
-
     ExtractUnrar();
-
 
     if (i.testRenderPage) {
         TestRenderPage(i);
@@ -638,14 +656,16 @@ int APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
         if (i.showConsole)
             system("pause");
     }
-    if (i.exitImmediately)
+    if (i.exitImmediately) {
         goto Exit;
+    }
     gCrashOnOpen = i.crashOnOpen;
 
     GetFixedPageUiColors(gRenderCache.textColor, gRenderCache.backgroundColor);
 
-    if (!RegisterWinClass())
+    if (!RegisterWinClass()) {
         goto Exit;
+    }
 
     CrashIf(hInstance != GetModuleHandle(nullptr));
     if (!InstanceInit())
@@ -661,8 +681,9 @@ int APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
         // print only the first one
         for (size_t n = 0; n < i.fileNames.size(); n++) {
             bool ok = PrintFile(i.fileNames.at(n), i.printerName, !i.silent, i.printSettings);
-            if (!ok)
+            if (!ok) {
                 retCode++;
+            }
         }
         --retCode; // was 1 if no print failures, turn 1 into 0
         goto Exit;

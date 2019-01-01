@@ -80,15 +80,23 @@ InstUninstGlobals gInstUninstGlobals = {
 WCHAR* gSupportedExts[] = {L".pdf", L".xps",  L".oxps", L".cbz", L".cbr",  L".cb7", L".cbt",  L".djvu",
                            L".chm", L".mobi", L".epub", L".fb2", L".fb2z", L".tif", L".tiff", nullptr};
 
+#ifdef _WIN64
+static const char* unrarFileName = "UnRAR64.dll";
+#else
+static const char* unrarFileName = "UnRAR.dll";
+#endif
+
 // The following list is used to verify that all the required files have been
 // installed (install flag set) and to know what files are to be removed at
 // uninstallation (all listed files that actually exist).
 // When a file is no longer shipped, just disable the install flag so that the
 // file is still correctly removed when SumatraPDF is eventually uninstalled.
 PayloadInfo gPayloadData[] = {
-    {"libmupdf.dll", true},          {"SumatraPDF.exe", true},   {"sumatrapdfprefs.dat", false},
-    {"DroidSansFallback.ttf", true}, {"npPdfViewer.dll", false}, {"PdfFilter.dll", true},
-    {"PdfPreview.dll", true},        {"uninstall.exe", true},    {nullptr, false},
+    {"libmupdf.dll", true},         {"SumatraPDF.exe", true},
+    {"sumatrapdfprefs.dat", false}, {"DroidSansFallback.ttf", true},
+    {"npPdfViewer.dll", false},     {"PdfFilter.dll", true},
+    {"PdfPreview.dll", true},       {"uninstall.exe", true},
+    {unrarFileName, true},          {nullptr, false},
 };
 
 int dpiAdjust(int value) {
@@ -375,7 +383,7 @@ static const WCHAR* ReadableProcName(const WCHAR* procPath) {
         EXENAME,          APP_NAME_STR,    L"plugin-container.exe", L"Mozilla Firefox", L"chrome.exe",
         L"Google Chrome", L"prevhost.exe", L"Windows Explorer",     L"dllhost.exe",     L"Windows Explorer",
     };
-    const WCHAR* procName = path::GetBaseName(procPath);
+    const WCHAR* procName = path::GetBaseNameNoFree(procPath);
     for (size_t i = 0; i < dimof(nameList); i += 2) {
         if (str::EqI(procName, nameList[i]))
             return nameList[i + 1];

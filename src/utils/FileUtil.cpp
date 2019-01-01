@@ -21,7 +21,7 @@ bool IsSep(char c) {
 }
 
 // Note: returns pointer inside <path>, do not free
-const char* GetBaseName(const char* path) {
+const char* GetBaseNameNoFree(const char* path) {
     const char* fileBaseName = path + str::Len(path);
     for (; fileBaseName > path; fileBaseName--) {
         if (IsSep(fileBaseName[-1]))
@@ -60,11 +60,13 @@ char* JoinUtf(const char* path, const char* fileName, Allocator* allocator) {
 
 #if OS_WIN
 bool IsSep(WCHAR c) {
+    // we support both
     return '\\' == c || '/' == c;
 }
 
 // Note: returns pointer inside <path>, do not free
-const WCHAR* GetBaseName(const WCHAR* path) {
+// TODO: replace usage with GetBaseName
+const WCHAR* GetBaseNameNoFree(const WCHAR* path) {
     const WCHAR* fileBaseName = path + str::Len(path);
     for (; fileBaseName > path; fileBaseName--) {
         if (IsSep(fileBaseName[-1])) {
@@ -72,6 +74,19 @@ const WCHAR* GetBaseName(const WCHAR* path) {
         }
     }
     return fileBaseName;
+}
+
+// returns file name part of full path
+// caller has to str::Free()
+WCHAR* GetBaseName(const WCHAR* path) {
+    // scanning from the end, look for '/'
+    const WCHAR* fileBaseName = path + str::Len(path);
+    for (; fileBaseName > path; fileBaseName--) {
+        if (IsSep(fileBaseName[-1])) {
+            break;
+        }
+    }
+    return str::Dup(fileBaseName);
 }
 
 // Note: returns pointer inside <path>, do not free
@@ -88,7 +103,7 @@ const WCHAR* GetExt(const WCHAR* path) {
 
 // Caller has to free()
 WCHAR* GetDir(const WCHAR* path) {
-    const WCHAR* baseName = GetBaseName(path);
+    const WCHAR* baseName = GetBaseNameNoFree(path);
     if (baseName == path) // relative directory
         return str::Dup(L".");
     if (baseName == path + 1) // relative root
@@ -148,10 +163,10 @@ WCHAR* Normalize(const WCHAR* path) {
     if (cch && cch <= MAX_PATH) {
         AutoFreeW shortpath(AllocArray<WCHAR>(cch));
         GetShortPathName(fullpath, shortpath, cch);
-        if (str::Len(path::GetBaseName(normpath)) + path::GetBaseName(shortpath) - shortpath < MAX_PATH) {
+        if (str::Len(path::GetBaseNameNoFree(normpath)) + path::GetBaseNameNoFree(shortpath) - shortpath < MAX_PATH) {
             // keep the long filename if possible
-            *(WCHAR*)path::GetBaseName(shortpath) = '\0';
-            return str::Join(shortpath, path::GetBaseName(normpath));
+            *(WCHAR*)path::GetBaseNameNoFree(shortpath) = '\0';
+            return str::Join(shortpath, path::GetBaseNameNoFree(normpath));
         }
         return shortpath.StealData();
     }
@@ -253,7 +268,7 @@ static bool MatchWildcardsRec(const WCHAR* fileName, const WCHAR* filter) {
    all filenames consisting of only a single character and
    having any extension) */
 bool Match(const WCHAR* path, const WCHAR* filter) {
-    path = GetBaseName(path);
+    path = GetBaseNameNoFree(path);
     while (str::FindChar(filter, ';')) {
         if (MatchWildcardsRec(path, filter))
             return true;

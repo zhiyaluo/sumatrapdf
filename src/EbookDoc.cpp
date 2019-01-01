@@ -1395,7 +1395,7 @@ bool TxtDoc::Load() {
     }
 
     int rfc;
-    isRFC = str::Parse(path::GetBaseName(fileName), L"rfc%d.txt%$", &rfc) != nullptr;
+    isRFC = str::Parse(path::GetBaseNameNoFree(fileName), L"rfc%d.txt%$", &rfc) != nullptr;
 
     const char* linkEnd = nullptr;
     bool rfcHeader = false;

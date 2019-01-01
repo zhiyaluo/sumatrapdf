@@ -47,7 +47,7 @@ const WCHAR* TabInfo::GetTabTitle() const {
     if (gGlobalPrefs->fullPathInTitle) {
         return filePath;
     }
-    return path::GetBaseName(filePath);
+    return path::GetBaseNameNoFree(filePath);
 }
 
 bool LinkSaver::SaveEmbedded(const unsigned char* data, size_t len) {
