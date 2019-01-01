@@ -1,4 +1,4 @@
-/* Copyright 2018 the SumatraPDF project authors (see AUTHORS file).
+/* Copyright 2019 the SumatraPDF project authors (see AUTHORS file).
    License: GPLv3 */
 
 class DisplayModel;
@@ -16,7 +16,7 @@ class SumatraUIAutomationPageProvider : public IRawElementProviderFragment, publ
     // is dm released, and our root has released us.
     // Only UIA keeps us alive but we can't access anything
     bool                                    released;
-    
+
     friend class SumatraUIAutomationDocumentProvider; // for setting up next/prev sibling
 
 public:
@@ -31,7 +31,7 @@ public:
     HRESULT STDMETHODCALLTYPE QueryInterface(const IID &,void **);
     ULONG   STDMETHODCALLTYPE AddRef(void);
     ULONG   STDMETHODCALLTYPE Release(void);
-    
+
     //IRawElementProviderFragment
     HRESULT STDMETHODCALLTYPE Navigate(enum NavigateDirection direction, IRawElementProviderFragment **pRetVal);
     HRESULT STDMETHODCALLTYPE GetRuntimeId(SAFEARRAY **pRetVal);

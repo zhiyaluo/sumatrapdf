@@ -1,4 +1,4 @@
-/* Copyright 2018 the SumatraPDF project authors (see AUTHORS file).
+/* Copyright 2019 the SumatraPDF project authors (see AUTHORS file).
    License: GPLv3 */
 
 class TextSelection;
@@ -10,7 +10,7 @@ class SumatraUIAutomationTextRange : public ITextRangeProvider {
     // used for getting dm and document state (== is document closed == dm is invalid)
     // text range will hold reference to document to prevent it from being removed
     SumatraUIAutomationDocumentProvider* document;
-    
+
     // TODO: this part is very much like TextSelection. Merge them somehow?
     // TODO: extend TextSelection to make these unnecessary
     int startPage, endPage;
@@ -48,7 +48,7 @@ public:
     HRESULT STDMETHODCALLTYPE QueryInterface(const IID &,void **);
     ULONG   STDMETHODCALLTYPE AddRef(void);
     ULONG   STDMETHODCALLTYPE Release(void);
-    
+
     //ITextRangeProvider
     HRESULT STDMETHODCALLTYPE Clone(ITextRangeProvider **clonedRange);
     HRESULT STDMETHODCALLTYPE Compare(ITextRangeProvider *range, BOOL *areSame);

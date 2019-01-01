@@ -1,4 +1,4 @@
-/* Copyright 2018 the SumatraPDF project authors (see AUTHORS file).
+/* Copyright 2019 the SumatraPDF project authors (see AUTHORS file).
    License: GPLv3 */
 
 class DisplayModel;
@@ -9,7 +9,7 @@ class SumatraUIAutomationTextRange;
 class SumatraUIAutomationDocumentProvider : public IRawElementProviderFragment,
                                             public IRawElementProviderSimple,
                                             public ITextProvider,
-                                            public IAccIdentity 
+                                            public IAccIdentity
 {
     LONG                                refCount;
     HWND                                canvasHwnd;
@@ -40,7 +40,7 @@ public:
     HRESULT STDMETHODCALLTYPE QueryInterface(const IID &,void **);
     ULONG   STDMETHODCALLTYPE AddRef(void);
     ULONG   STDMETHODCALLTYPE Release(void);
-    
+
     // IRawElementProviderFragment
     HRESULT STDMETHODCALLTYPE Navigate(enum NavigateDirection direction, IRawElementProviderFragment **pRetVal);
     HRESULT STDMETHODCALLTYPE GetRuntimeId(SAFEARRAY **pRetVal);
@@ -54,7 +54,7 @@ public:
     HRESULT STDMETHODCALLTYPE GetPropertyValue(PROPERTYID propertyId,VARIANT *pRetVal);
     HRESULT STDMETHODCALLTYPE get_HostRawElementProvider(IRawElementProviderSimple **pRetVal);
     HRESULT STDMETHODCALLTYPE get_ProviderOptions(ProviderOptions *pRetVal);
-    
+
     // ITextProvider
     HRESULT STDMETHODCALLTYPE GetSelection(SAFEARRAY * *pRetVal);
     HRESULT STDMETHODCALLTYPE GetVisibleRanges(SAFEARRAY * *pRetVal);

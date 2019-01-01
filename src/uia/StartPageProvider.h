@@ -1,4 +1,4 @@
-/* Copyright 2018 the SumatraPDF project authors (see AUTHORS file).
+/* Copyright 2019 the SumatraPDF project authors (see AUTHORS file).
    License: GPLv3 */
 
 class SumatraUIAutomationProvider;
@@ -10,12 +10,12 @@ class SumatraUIAutomationStartPageProvider : public IRawElementProviderFragment,
 public:
     SumatraUIAutomationStartPageProvider(HWND canvasHwnd, SumatraUIAutomationProvider* root);
     ~SumatraUIAutomationStartPageProvider();
-    
+
     //IUnknown
     HRESULT STDMETHODCALLTYPE QueryInterface(const IID &,void **);
     ULONG   STDMETHODCALLTYPE AddRef(void);
     ULONG   STDMETHODCALLTYPE Release(void);
-    
+
     //IRawElementProviderFragment
     HRESULT STDMETHODCALLTYPE Navigate(enum NavigateDirection direction, IRawElementProviderFragment **pRetVal);
     HRESULT STDMETHODCALLTYPE GetRuntimeId(SAFEARRAY **pRetVal);
