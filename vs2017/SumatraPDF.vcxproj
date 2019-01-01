@@ -404,6 +404,7 @@
     <ClInclude Include="..\src\Translations.h" />
     <ClInclude Include="..\src\Version.h" />
     <ClInclude Include="..\src\WindowInfo.h" />
+    <ClInclude Include="..\src\installer\Installer.h" />
     <ClInclude Include="..\src\mui\Mui.h" />
     <ClInclude Include="..\src\mui\MuiBase.h" />
     <ClInclude Include="..\src\mui\MuiButton.h" />
@@ -478,6 +479,7 @@
     <ClCompile Include="..\src\WindowInfo.cpp" />
     <ClCompile Include="..\src\installer\InstUninstCommon.cpp" />
     <ClCompile Include="..\src\installer\Installer.cpp" />
+    <ClCompile Include="..\src\installer\Uninstaller.cpp" />
     <ClCompile Include="..\src\mui\Mui.cpp" />
     <ClCompile Include="..\src\mui\MuiBase.cpp" />
     <ClCompile Include="..\src\mui\MuiButton.cpp" />

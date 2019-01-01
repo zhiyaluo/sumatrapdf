@@ -61,6 +61,7 @@ struct PayloadInfo {
 };
 
 extern InstUninstGlobals gInstUninstGlobals;
+extern const WCHAR* gDefaultMsg;
 extern PayloadInfo gPayloadData[];
 extern WCHAR* gSupportedExts[];
 extern HWND gHwndFrame;

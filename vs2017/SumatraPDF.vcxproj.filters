@@ -159,6 +159,9 @@
     <ClInclude Include="..\src\WindowInfo.h">
       <Filter>src</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\installer\Installer.h">
+      <Filter>src\installer</Filter>
+    </ClInclude>
     <ClInclude Include="..\src\mui\Mui.h">
       <Filter>src\mui</Filter>
     </ClInclude>
@@ -375,6 +378,9 @@
       <Filter>src\installer</Filter>
     </ClCompile>
     <ClCompile Include="..\src\installer\Installer.cpp">
+      <Filter>src\installer</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\installer\Uninstaller.cpp">
       <Filter>src\installer</Filter>
     </ClCompile>
     <ClCompile Include="..\src\mui\Mui.cpp">

@@ -814,11 +814,6 @@ static WCHAR* GetInstallationDir() {
     return str::Dup(L"C:\\" APP_NAME_STR);
 }
 
-// TODO: must pass msg to CheckInstallUninstallPossible() instead
-void SetDefaultMsg() {
-    SetMsg(_TR("Thank you for choosing SumatraPDF!"), COLOR_MSG_WELCOME);
-}
-
 static LRESULT CALLBACK WndProcFrame(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) {
     bool handled;
     switch (message) {
@@ -1010,6 +1005,8 @@ int RunInstaller() {
     SetCurrentDirectoryW(currDir);
     str::Free(currDir);
 #endif
+
+    gDefaultMsg = _TR("Thank you for choosing SumatraPDF!");
 
     ParseCommandLine(GetCommandLine());
     if (gInstUninstGlobals.showUsageAndQuit) {

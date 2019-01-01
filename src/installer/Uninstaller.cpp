@@ -377,11 +377,6 @@ static WCHAR* GetInstallationDir() {
     return path::GetDir(GetOwnPath());
 }
 
-// TODO: must pass msg to CheckInstallUninstallPossible() instead
-void SetDefaultMsg() {
-    SetMsg(_TR("Are you sure you want to uninstall SumatraPDF?"), COLOR_MSG_WELCOME);
-}
-
 static LRESULT CALLBACK WndProcFrame(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) {
     bool handled;
     switch (message) {
@@ -508,15 +503,17 @@ static void ParseCommandLine(WCHAR* cmdLine) {
     // skip the first arg (exe path)
     for (size_t i = 1; i < argList.size(); i++) {
         WCHAR* arg = argList.at(i);
-        if ('-' != *arg && '/' != *arg)
+        if ('-' != *arg && '/' != *arg) {
             continue;
+        }
 
-        if (is_arg("s"))
+        if (is_arg("s")) {
             gInstUninstGlobals.silent = true;
-        else if (is_arg_with_param("d"))
+        } else if (is_arg_with_param("d")) {
             str::ReplacePtr(&gInstUninstGlobals.installDir, argList.at(++i));
-        else if (is_arg("h") || is_arg("help") || is_arg("?"))
+        } else if (is_arg("h") || is_arg("help") || is_arg("?")) {
             gInstUninstGlobals.showUsageAndQuit = true;
+        }
 #ifdef ENABLE_CRASH_TESTING
         else if (is_arg("crash")) {
             // will induce crash when 'Install' button is pressed
@@ -527,43 +524,10 @@ static void ParseCommandLine(WCHAR* cmdLine) {
     }
 }
 
-#define CRASH_DUMP_FILE_NAME L"suminstaller.dmp"
-
-// no-op but must be defined for CrashHandler.cpp
-void ShowCrashHandlerMessage() {}
-void GetStressTestInfo(str::Str<char>* s) {
-    UNUSED(s);
-}
-
-void GetProgramInfo(str::Str<char>& s) {
-    s.AppendFmt("Ver: %s", CURR_VERSION_STRA);
-#ifdef SVN_PRE_RELEASE_VER
-    s.AppendFmt(" pre-release");
-#endif
-    if (IsProcess64()) {
-        s.Append(" 64-bit");
-    }
-#ifdef DEBUG
-    if (!str::Find(s.Get(), " (dbg)"))
-        s.Append(" (dbg)");
-#endif
-    s.Append("\r\n");
-#if defined(GIT_COMMIT_ID)
-    const char* gitSha1 = QM(GIT_COMMIT_ID);
-    s.AppendFmt("Git: %s (https://github.com/sumatrapdfreader/sumatrapdf/tree/%s)\r\n", gitSha1, gitSha1);
-#endif
-}
-
-bool CrashHandlerCanUseNet() {
-    return true;
-}
-
-int APIENTRY WinMain(HINSTANCE /*hInstance*/, HINSTANCE /*hPrevInstance*/, LPSTR /* lpCmdLine*/, int nCmdShow) {
-    UNUSED(nCmdShow);
+int RunUninstaller() {
     int ret = 1;
 
-    SetErrorMode(SEM_NOOPENFILEERRORBOX | SEM_FAILCRITICALERRORS);
-
+#if 0 // TODO: probably not needed due to NoDllHijcaking()
     // Change current directory to prevent dll hijacking.
     // LoadLibrary first loads from current directory which could be
     // browser's download directory, which is an easy target
@@ -573,13 +537,9 @@ int APIENTRY WinMain(HINSTANCE /*hInstance*/, HINSTANCE /*hPrevInstance*/, LPSTR
     auto currDir = GetSystem32Dir();
     SetCurrentDirectoryW(currDir);
     free(currDir);
+#endif
 
-    InitDynCalls();
-    NoDllHijacking();
-
-    ScopedCom com;
-    InitAllCommonControls();
-    ScopedGdiPlus gdi;
+    gDefaultMsg = _TR("Are you sure you want to uninstall SumatraPDF?");
 
     ParseCommandLine(GetCommandLine());
     if (gInstUninstGlobals.showUsageAndQuit) {
@@ -587,11 +547,14 @@ int APIENTRY WinMain(HINSTANCE /*hInstance*/, HINSTANCE /*hPrevInstance*/, LPSTR
         ret = 0;
         goto Exit;
     }
-    if (!gInstUninstGlobals.installDir)
-        gInstUninstGlobals.installDir = GetInstallationDir();
 
-    if (ExecuteUninstallerFromTempDir())
+    if (!gInstUninstGlobals.installDir) {
+        gInstUninstGlobals.installDir = GetInstallationDir();
+    }
+
+    if (ExecuteUninstallerFromTempDir()) {
         return 0;
+    }
 
     if (gInstUninstGlobals.silent) {
         UninstallerThread(nullptr);
@@ -599,16 +562,17 @@ int APIENTRY WinMain(HINSTANCE /*hInstance*/, HINSTANCE /*hPrevInstance*/, LPSTR
         goto Exit;
     }
 
-    if (!RegisterWinClass())
+    if (!RegisterWinClass()) {
         goto Exit;
+    }
 
-    if (!InstanceInit())
+    if (!InstanceInit()) {
         goto Exit;
+    }
 
     ret = RunApp();
 
 Exit:
-    trans::Destroy();
     free(gInstUninstGlobals.installDir);
     free(gInstUninstGlobals.firstError);
 
