@@ -446,8 +446,7 @@ std::tuple<HWND, SIZE> CreateButton(HWND hwndParent, const WCHAR* s, int id, DWO
     HMENU idMenu = (HMENU)(UINT_PTR)id;
     style |= WS_CHILD | WS_TABSTOP;
     auto h = GetModuleHandle(nullptr);
-    HWND hwnd =
-        CreateWindowExW(0, WC_BUTTON, L"", style, 0, 0, 100, 20, hwndParent, idMenu, h, nullptr);
+    HWND hwnd = CreateWindowExW(0, WC_BUTTON, L"", style, 0, 0, 100, 20, hwndParent, idMenu, h, nullptr);
     SetWindowFont(hwnd, gFontDefault, TRUE);
     SIZE size = SetButtonTextAndResize(hwnd, s);
     return {hwnd, size};

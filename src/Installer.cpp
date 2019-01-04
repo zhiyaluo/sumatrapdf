@@ -145,9 +145,19 @@ static bool IsValidInstaller()
 }
 #endif
 
+// copy our own executable as SumatraPDF in installation directory
 static bool CopySelf() {
-    // TODO: copy our own executable as SumatraPDF.exe
-    return false;
+    // TODO: write a CopyFile(dstPath, srcPath)
+    auto exePath = GetExePath();
+    auto d = file::ReadFile(exePath);
+    if (d.Get() == nullptr) {
+        return false;
+    }
+
+    auto* dstPath = path::Join(gInstUninstGlobals.installDir, L"SumatraPDF.exe");
+    bool ok = file::WriteFile(dstPath, d.Get(), d.size);
+    free(dstPath);
+    return true;
 }
 
 static std::tuple<const char*, DWORD, HGLOBAL> LockDataResource(int id) {
@@ -167,7 +177,7 @@ static std::tuple<const char*, DWORD, HGLOBAL> LockDataResource(int id) {
     return {data, dataSize, res};
 }
 
-static bool ExtractFiles() {
+static bool ExtractInstallerFiles() {
     bool ok = CopySelf();
     if (!ok) {
         return false;
@@ -177,7 +187,6 @@ static bool ExtractFiles() {
     if (data == nullptr) {
         goto Corrupted;
     }
-
 
     lzma::SimpleArchive archive;
     ok = lzma::ParseSimpleArchive(data, size, &archive);
@@ -391,7 +400,7 @@ static DWORD WINAPI InstallerThread(LPVOID data) {
     }
     ProgressStep();
 
-    if (!ExtractFiles()) {
+    if (!ExtractInstallerFiles()) {
         goto Error;
     }
 
@@ -770,7 +779,7 @@ static void OnCreateWindow(HWND hwnd) {
 
     const WCHAR* s = L"&...";
     SizeI btnSize2 = TextSizeInHwnd(hwnd, s);
-    //btnSize.cx += dpiAdjust(4);
+    // btnSize.cx += dpiAdjust(4);
     std::tie(gHwndButtonBrowseDir, btnSize) = CreateButton(hwnd, s, ID_BUTTON_BROWSE, BS_PUSHBUTTON);
     x = r.dx - WINDOW_MARGIN - btnSize2.dx;
     SetWindowPos(gHwndButtonBrowseDir, nullptr, x, y, btnSize2.dx, staticDy,

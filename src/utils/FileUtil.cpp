@@ -445,6 +445,7 @@ int64_t GetSize(const WCHAR* filePath) {
     return size.QuadPart;
 }
 
+// TODO: make it return std::tuple<>
 char* ReadFileWithAllocator(const WCHAR* path, size_t* fileSizeOut, Allocator* allocator) {
     OwnedData s = str::conv::ToUtf8(path);
     return ReadFileWithAllocator(s.Get(), fileSizeOut, allocator);
@@ -488,6 +489,7 @@ char* ReadFileWithAllocator(const WCHAR* path, size_t* fileSizeOut, Allocator* a
 }
 #endif
 
+// TODO: make it return std::tuple<>?
 OwnedData ReadFile(const WCHAR* path) {
     size_t size;
     char* data = ReadFileWithAllocator(path, &size, nullptr);
