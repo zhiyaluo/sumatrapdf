@@ -167,7 +167,7 @@ static std::tuple<const char*, DWORD, HGLOBAL> LockDataResource(int id) {
     return {data, dataSize, res};
 }
 
-static bool InstallCopyFiles() {
+static bool ExtractFiles() {
     bool ok = CopySelf();
     if (!ok) {
         return false;
@@ -391,7 +391,7 @@ static DWORD WINAPI InstallerThread(LPVOID data) {
     }
     ProgressStep();
 
-    if (!InstallCopyFiles()) {
+    if (!ExtractFiles()) {
         goto Error;
     }
 
@@ -697,8 +697,8 @@ static void OnCreateWindow(HWND hwnd) {
     ClientRect r(hwnd);
     gHwndButtonInstUninst = CreateDefaultButton(hwnd, _TR("Install SumatraPDF"), IDOK);
 
-    SIZE btnSize;
-    gHwndButtonOptions = CreateButton(hwnd, _TR("&Options"), ID_BUTTON_OPTIONS, BS_PUSHBUTTON, btnSize);
+    auto [btn, btnSize] = CreateButton(hwnd, _TR("&Options"), ID_BUTTON_OPTIONS, BS_PUSHBUTTON);
+    gHwndButtonOptions = btn;
     int x = WINDOW_MARGIN;
     int y = r.dy - btnSize.cy - WINDOW_MARGIN;
     SetWindowPos(gHwndButtonOptions, nullptr, x, y, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_SHOWWINDOW);
@@ -770,8 +770,8 @@ static void OnCreateWindow(HWND hwnd) {
 
     const WCHAR* s = L"&...";
     SizeI btnSize2 = TextSizeInHwnd(hwnd, s);
-    btnSize.cx += dpiAdjust(4);
-    gHwndButtonBrowseDir = CreateButton(hwnd, s, ID_BUTTON_BROWSE, BS_PUSHBUTTON, btnSize);
+    //btnSize.cx += dpiAdjust(4);
+    std::tie(gHwndButtonBrowseDir, btnSize) = CreateButton(hwnd, s, ID_BUTTON_BROWSE, BS_PUSHBUTTON);
     x = r.dx - WINDOW_MARGIN - btnSize2.dx;
     SetWindowPos(gHwndButtonBrowseDir, nullptr, x, y, btnSize2.dx, staticDy,
                  SWP_NOZORDER | SWP_NOACTIVATE | SWP_SHOWWINDOW | SWP_FRAMECHANGED);

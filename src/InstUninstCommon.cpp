@@ -442,24 +442,25 @@ SIZE SetButtonTextAndResize(HWND hwnd, const WCHAR* s) {
 }
 
 // Creates a button that has a right size for it's text,
-HWND CreateButton(HWND hwndParent, const WCHAR* s, int id, DWORD style, SIZE& sizeOut) {
+std::tuple<HWND, SIZE> CreateButton(HWND hwndParent, const WCHAR* s, int id, DWORD style) {
     HMENU idMenu = (HMENU)(UINT_PTR)id;
     style |= WS_CHILD | WS_TABSTOP;
+    auto h = GetModuleHandle(nullptr);
     HWND hwnd =
-        CreateWindowExW(0, WC_BUTTON, L"", style, 0, 0, 100, 20, hwndParent, idMenu, GetModuleHandle(nullptr), nullptr);
+        CreateWindowExW(0, WC_BUTTON, L"", style, 0, 0, 100, 20, hwndParent, idMenu, h, nullptr);
     SetWindowFont(hwnd, gFontDefault, TRUE);
-    sizeOut = SetButtonTextAndResize(hwnd, s);
-    return hwnd;
+    SIZE size = SetButtonTextAndResize(hwnd, s);
+    return {hwnd, size};
 }
 
 HWND CreateDefaultButton(HWND hwndParent, const WCHAR* s, int id) {
-    SIZE size;
-    HWND hwnd = CreateButton(hwndParent, s, id, BS_DEFPUSHBUTTON, size);
+    auto [hwnd, size] = CreateButton(hwndParent, s, id, BS_DEFPUSHBUTTON);
 
     ClientRect r(hwndParent);
     int x = r.dx - size.cx - WINDOW_MARGIN;
     int y = r.dy - size.cy - WINDOW_MARGIN;
-    SetWindowPos(hwnd, nullptr, x, y, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_SHOWWINDOW);
+    UINT flags = SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_SHOWWINDOW;
+    SetWindowPos(hwnd, nullptr, x, y, 0, 0, flags);
     return hwnd;
 }
 
