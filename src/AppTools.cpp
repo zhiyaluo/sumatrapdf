@@ -514,13 +514,11 @@ static const WCHAR* Md5OfAppExe() {
     return md5Hex.StealData();
 }
 
-static const WCHAR* unrarFileName = L"UnRAR.dll";
-
 // remove all directories except for ours
 //. need to avoid acuumulating the directories when testing
 // locally or using pre-release builds (both cases where
 // exe and its md5 changes frequently)
-void RemoveMd5AppDataDirectories() {
+static void RemoveMd5AppDataDirectories() {
     const WCHAR* extractedDir = PathForFileInAppDataDir(L"extracted");
     if (!extractedDir) {
         return;
@@ -550,9 +548,11 @@ void RemoveMd5AppDataDirectories() {
     }
 }
 
-// return a path on disk to extracted unrar.dll or nullptr if couldn't extract
-// memory has to be freed by the caller
-const WCHAR* ExractUnrarDll() {
+// return of directory unique to this binary where
+// we can extract embedded files. We quarantee uniquness
+// by using md5 of executable.
+// caller has to str::Free() returned value
+const WCHAR* GetExtractedMd5Dir() {
     RemoveMd5AppDataDirectories();
 
     const WCHAR* extractedDir = PathForFileInAppDataDir(L"extracted");
@@ -568,42 +568,5 @@ const WCHAR* ExractUnrarDll() {
     defer { str::Free(md5App); };
 
     const WCHAR* md5Dir = path::Join(extractedDir, md5App);
-    defer { str::Free(md5Dir); };
-
-    const WCHAR* dllPath = path::Join(md5Dir, unrarFileName);
-    defer { str::Free(dllPath); };
-
-    if (file::Exists(dllPath)) {
-        const WCHAR* ret = dllPath;
-        dllPath = nullptr; // don't free
-        return ret;
-    }
-
-    bool ok = dir::CreateAll(md5Dir);
-    if (!ok) {
-        return nullptr;
-    }
-
-    HGLOBAL res = 0;
-    auto h = GetModuleHandle(nullptr);
-    auto resName = MAKEINTRESOURCEW(1);
-    HRSRC resSrc = FindResourceW(h, resName, RT_RCDATA);
-    if (!resSrc) {
-        return nullptr;
-    }
-    res = LoadResource(nullptr, resSrc);
-    if (!res) {
-        return nullptr;
-    }
-    const char* data = (const char*)LockResource(res);
-    defer { UnlockResource(res); };
-    DWORD dataSize = SizeofResource(nullptr, resSrc);
-    ok = file::WriteFile(dllPath, data, dataSize);
-    if (!ok) {
-        return nullptr;
-    }
-
-    const WCHAR* ret = dllPath;
-    dllPath = nullptr; // don't free
-    return ret;
+    return md5Dir;
 }

@@ -81,5 +81,5 @@ Archive* Open7zArchive(IStream* stream);
 Archive* OpenTarArchive(IStream* stream);
 Archive* OpenRarArchive(IStream* stream);
 
-void SetUnrarDllPath(const WCHAR*);
+bool LoadUnrarDll(const WCHAR* path);
 #endif

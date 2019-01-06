@@ -289,47 +289,29 @@ static bool IsUnrarDllLoaded() {
     return fnRAROpenArchiveEx && fnRARReadHeaderEx && fnRARProcessFile && fnRARCloseArchive && fnRARGetDllVersion;
 }
 
-static bool IsValidUnrarDll() {
+static bool IsValidUnrarDllLoaded() {
+    if (!IsUnrarDllLoaded()) {
+        return false;
+    }
     int ver = fnRARGetDllVersion();
     return ver >= 6;
 }
 
-// TODO: must check unrar64.dll on _WIN64 first but also accept unrar.dll on _WIN64
-#ifdef _WIN64
-static const WCHAR* unrarFileName = L"unrar64.dll";
-#else
-static const WCHAR* unrarFileName = L"unrar.dll";
-#endif
-
-static AutoFreeW unrarDllPath;
-
-void SetUnrarDllPath(const WCHAR* path) {
-    unrarDllPath.SetCopy(path);
-}
-
-static bool TryLoadUnrarDll() {
-    if (IsUnrarDllLoaded()) {
-        return IsValidUnrarDll();
-    }
-
-    HMODULE h = nullptr;
-    if (unrarDllPath.Get() != nullptr) {
-        h = LoadLibraryW(unrarDllPath.Get());
-    }
-    if (h == nullptr) {
-        auto* dllPath = path::GetPathOfFileInAppDir(unrarFileName);
-        h = LoadLibraryW(dllPath);
-        free(dllPath);
-    }
-    if (h == nullptr) {
-        return false;
-    }
+bool LoadUnrarDll(const WCHAR* path) {
+    CrashIf(IsValidUnrarDllLoaded());
+    auto h = LoadLibraryW(path);
+    CrashIf(h == nullptr);
     fnRAROpenArchiveEx = (RAROpenArchiveExProc)GetProcAddress(h, "RAROpenArchiveEx");
     fnRARReadHeaderEx = (RARReadHeaderExProc)GetProcAddress(h, "RARReadHeaderEx");
     fnRARProcessFile = (RARProcessFileProc)GetProcAddress(h, "RARProcessFile");
     fnRARCloseArchive = (RARCloseArchiveProc)GetProcAddress(h, "RARCloseArchive");
     fnRARGetDllVersion = (RARGetDllVersionProc)GetProcAddress(h, "RARGetDllVersion");
-    return IsUnrarDllLoaded() && IsValidUnrarDll();
+
+    return IsValidUnrarDllLoaded();
+}
+
+static bool TryLoadUnrarDll() {
+    return IsValidUnrarDllLoaded();
 }
 
 // return 1 on success. Other values for msg that we don't handle: UCM_CHANGEVOLUME, UCM_NEEDPASSWORD
@@ -364,8 +346,7 @@ static bool FindFile(HANDLE hArc, RARHeaderDataEx* rarHeader, const WCHAR* fileN
 }
 
 OwnedData Archive::GetFileDataByIdUnarrDll(size_t fileId) {
-    CrashIf(!IsUnrarDllLoaded());
-    CrashIf(!IsValidUnrarDll());
+    CrashIf(!IsValidUnrarDllLoaded());
     CrashIf(!rarFilePath_);
 
     AutoFreeW rarPath(str::conv::FromUtf8(rarFilePath_));

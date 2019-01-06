@@ -56,6 +56,7 @@
 #include "Menu.h"
 #include "utils/Archive.h"
 #include "AppTools.h"
+#include "Installer.h"
 
 #define CRASH_DUMP_FILE_NAME L"sumatrapdfcrash.dmp"
 
@@ -520,14 +521,62 @@ static void ShutdownCommon() {
     _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 }
 
-// TODO: this will expand to extract everything
-static void ExtractUnrar() {
-    const WCHAR* path = ExractUnrarDll();
-    if (path == nullptr) {
-        return;
+static bool AllFilesAlreadyExtracted(const WCHAR* dir) {
+    for (int i = 0; nullptr != gFilesToExtract[i]; i++) {
+        AutoFreeW fileName(str::conv::FromUtf8(gFilesToExtract[i]));
+        auto* path = path::Join(dir, fileName.Get());
+        bool exists = file::Exists(path);
+        str::Free(path);
+        if (!exists) {
+            return false;
+        }
     }
-    SetUnrarDllPath(path);
-    str::Free(path);
+    return true;
+}
+
+// extract all embedded files to a directory unique to our
+// executable.
+// return false if failed
+// TODO: what do I need to do for the font file to be visible?
+static bool MaybeExtractFiles() {
+    const WCHAR* extractDir = GetExtractedMd5Dir();
+    if (extractDir == nullptr) {
+        return false;
+    }
+    defer { str::Free(extractDir); };
+
+    // skip if we already have all files extracted
+    if (AllFilesAlreadyExtracted(extractDir)) {
+        return true;
+    }
+
+    bool ok = dir::CreateAll(extractDir);
+    if (!ok) {
+        return false;
+    }
+
+    ok = ExtractInstallerFilesToDir(extractDir);
+    if (!ok) {
+        return false;
+    }
+
+    // pre-load wanted dlls. libmupdf.dll is delay-linked so
+    // must load it as soon as possible
+    {
+        const WCHAR* path = path::Join(extractDir, L"libmupdf.dll");
+        auto h = LoadLibraryW(path);
+        str::Free(path);
+        CrashIf(!h);
+    }
+
+    // we could try to delay loading this one until it's needed
+    {
+        const WCHAR* path = path::Join(extractDir, L"UnRAR.dll");
+        ok = LoadUnrarDll(path);
+        str::Free(path);
+        CrashIf(!ok);
+    }
+    return true;
 }
 
 // we're in installer mode if the name of the executable
@@ -626,12 +675,16 @@ int APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 #if defined(SUPPORTS_AUTO_UPDATE) || defined(DEBUG)
     if (str::StartsWith(cmdLine, "-autoupdate")) {
         bool quit = AutoUpdateMain();
-        if (quit)
+        if (quit) {
             return 0;
+        }
     }
 #endif
 
-    ExtractUnrar();
+    bool ok = MaybeExtractFiles();
+    if (!ok) {
+        return 1;
+    }
 
     if (i.testRenderPage) {
         TestRenderPage(i);
@@ -646,8 +699,9 @@ int APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
     }
 
     InitializePolicies(i.restrictedUse);
-    if (i.appdataDir)
+    if (i.appdataDir) {
         SetAppDataPath(i.appdataDir);
+    }
 
     prefs::Load();
     prefs::UpdateGlobalPrefs(i);
@@ -697,7 +751,7 @@ int APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
         // note: this prints all PDF files. Another option would be to
         // print only the first one
         for (size_t n = 0; n < i.fileNames.size(); n++) {
-            bool ok = PrintFile(i.fileNames.at(n), i.printerName, !i.silent, i.printSettings);
+            ok = PrintFile(i.fileNames.at(n), i.printerName, !i.silent, i.printSettings);
             if (!ok) {
                 retCode++;
             }

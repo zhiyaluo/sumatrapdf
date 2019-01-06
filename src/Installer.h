@@ -119,3 +119,4 @@ bool CreateProcessHelper(const WCHAR* exe, const WCHAR* args = nullptr);
 void NotifyFailed(const WCHAR* msg);
 void SetMsg(const WCHAR* msg, Gdiplus::Color color);
 void SetDefaultMsg();
+bool ExtractInstallerFilesToDir(const WCHAR* dir);

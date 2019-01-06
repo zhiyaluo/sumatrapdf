@@ -93,8 +93,9 @@ int dpiAdjust(int value) {
 }
 
 void NotifyFailed(const WCHAR* msg) {
-    if (!gInstUninstGlobals.firstError)
+    if (!gInstUninstGlobals.firstError) {
         gInstUninstGlobals.firstError = str::Dup(msg);
+    }
     plogf(L"%s", msg);
 }
 

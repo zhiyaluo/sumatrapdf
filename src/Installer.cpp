@@ -93,11 +93,12 @@ static int GetInstallationStepCount() {
 }
 
 static inline void ProgressStep() {
-    if (gHwndProgressBar)
+    if (gHwndProgressBar) {
         PostMessage(gHwndProgressBar, PBM_STEPIT, 0, 0);
+    }
 }
 
-static bool ExtractFiles(lzma::SimpleArchive* archive) {
+static bool ExtractFilesToDir(lzma::SimpleArchive* archive, const WCHAR* dir) {
     lzma::FileInfo* fi;
     char* uncompressed;
 
@@ -116,7 +117,7 @@ static bool ExtractFiles(lzma::SimpleArchive* archive) {
             return false;
         }
         AutoFreeW filePath(str::conv::FromUtf8(fi->name));
-        AutoFreeW extPath(path::Join(gInstUninstGlobals.installDir, filePath));
+        AutoFreeW extPath(path::Join(dir, filePath));
         bool ok = file::WriteFile(extPath, uncompressed, fi->uncompressedSize);
         free(uncompressed);
         if (!ok) {
@@ -174,31 +175,35 @@ static std::tuple<const char*, DWORD, HGLOBAL> LockDataResource(int id) {
     return {data, dataSize, res};
 }
 
-static bool ExtractInstallerFiles() {
-    bool ok = CopySelf();
-    if (!ok) {
-        return false;
-    }
-
+bool ExtractInstallerFilesToDir(const WCHAR* dir) {
     auto [data, size, res] = LockDataResource(1);
     if (data == nullptr) {
         goto Corrupted;
     }
 
     lzma::SimpleArchive archive;
-    ok = lzma::ParseSimpleArchive(data, size, &archive);
+    bool ok = lzma::ParseSimpleArchive(data, size, &archive);
     if (!ok) {
         goto Corrupted;
     }
 
     // on error, ExtractFiles() shows error message itself
-    ok = ExtractFiles(&archive);
+    ok = ExtractFilesToDir(&archive, dir);
     UnlockResource(res);
     return ok;
 Corrupted:
     NotifyFailed(_TR("The installer has been corrupted. Please download it again.\nSorry for the inconvenience!"));
     UnlockResource(res);
     return false;
+}
+
+static bool ExtractInstallerFiles() {
+    bool ok = CopySelf();
+    if (!ok) {
+        return false;
+    }
+
+    return ExtractInstallerFilesToDir(gInstUninstGlobals.installDir);
 }
 
 /* Caller needs to free() the result. */
