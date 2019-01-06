@@ -189,15 +189,27 @@ static BOOL RemoveEmptyDirectory(const WCHAR* dir) {
     return success;
 }
 
-static BOOL RemoveInstalledFiles() {
-    BOOL success = TRUE;
+static bool DeleteFileInInstallDir(const char* fileName) {
+    AutoFreeW relPath(str::conv::FromUtf8(fileName));
+    AutoFreeW path(path::Join(gInstUninstGlobals.installDir, relPath));
+    return DeleteFile(path);
+}
 
-    for (int i = 0; nullptr != gPayloadData[i].fileName; i++) {
-        AutoFreeW relPath(str::conv::FromUtf8(gPayloadData[i].fileName));
-        AutoFreeW path(path::Join(gInstUninstGlobals.installDir, relPath));
+// Those are files that we might have installed in previous versions of sumatra
+// and should be removed on uninstall
+static const char* gFilesToDelete[] = {
+    "sumatrapdfprefs.dat", "SumatraPDF.exe", "uninstall.exe", "npPdfViewer.dll", nullptr,
+};
 
-        if (file::Exists(path))
-            success &= DeleteFile(path);
+static bool RemoveInstalledFiles() {
+    bool success = true;
+
+    for (int i = 0; nullptr != gFilesToExtract[i]; i++) {
+        success &= DeleteFileInInstallDir(gFilesToExtract[i]);
+    }
+
+    for (int i = 0; nullptr != gFilesToDelete[i]; i++) {
+        success &= DeleteFileInInstallDir(gFilesToDelete[i]);
     }
 
     RemoveEmptyDirectory(gInstUninstGlobals.installDir);

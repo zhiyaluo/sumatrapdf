@@ -79,23 +79,13 @@ InstUninstGlobals gInstUninstGlobals = {
 WCHAR* gSupportedExts[] = {L".pdf", L".xps",  L".oxps", L".cbz", L".cbr",  L".cb7", L".cbt",  L".djvu",
                            L".chm", L".mobi", L".epub", L".fb2", L".fb2z", L".tif", L".tiff", nullptr};
 
-#ifdef _WIN64
-static const char* unrarFileName = "UnRAR64.dll";
-#else
-static const char* unrarFileName = "UnRAR.dll";
-#endif
-
 // The following list is used to verify that all the required files have been
 // installed (install flag set) and to know what files are to be removed at
 // uninstallation (all listed files that actually exist).
 // When a file is no longer shipped, just disable the install flag so that the
 // file is still correctly removed when SumatraPDF is eventually uninstalled.
-PayloadInfo gPayloadData[] = {
-    {"libmupdf.dll", true},         {"SumatraPDF.exe", false},
-    {"sumatrapdfprefs.dat", false}, {"DroidSansFallback.ttf", true},
-    {"npPdfViewer.dll", false},     {"PdfFilter.dll", true},
-    {"PdfPreview.dll", true},       {"uninstall.exe", false},
-    {unrarFileName, true},          {nullptr, false},
+const char* gFilesToExtract[] = {
+    "libmupdf.dll", "DroidSansFallback.ttf", "PdfFilter.dll", "PdfPreview.dll", "UnRAR.dll", nullptr,
 };
 
 int dpiAdjust(int value) {

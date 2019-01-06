@@ -207,7 +207,7 @@
       <AdditionalOptions>/DELAYLOAD:gdiplus.dll /DELAYLOAD:msimg32.dll /DELAYLOAD:shlwapi.dll /DELAYLOAD:urlmon.dll /DELAYLOAD:version.dll /DELAYLOAD:wininet.dll /DELAYLOAD:libmupdf.dll %(AdditionalOptions)</AdditionalOptions>
     </Link>
     <PreBuildEvent>
-      <Command>cd ../dbg64 &amp; ..\bin\MakeLZSA.exe InstallerData.dat libmupdf.dll:libmupdf.dll PdfFilter.dll:PdfFilter.dll PdfPreview.dll:PdfPreview.dll ..\mupdf\resources\fonts\droid\DroidSansFallback.ttf:DroidSansFallback.ttf ..\ext\UnrarDLL\x64\UnRAR64.dll:UnRAR64.dll</Command>
+      <Command>cd ../dbg64 &amp; ..\bin\MakeLZSA.exe InstallerData.dat libmupdf.dll:libmupdf.dll PdfFilter.dll:PdfFilter.dll PdfPreview.dll:PdfPreview.dll ..\mupdf\resources\fonts\droid\DroidSansFallback.ttf:DroidSansFallback.ttf ..\ext\UnrarDLL\x64\UnRAR64.dll:UnRAR.dll</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -280,7 +280,7 @@
       <AdditionalOptions>/DELAYLOAD:gdiplus.dll /DELAYLOAD:msimg32.dll /DELAYLOAD:shlwapi.dll /DELAYLOAD:urlmon.dll /DELAYLOAD:version.dll /DELAYLOAD:wininet.dll /DELAYLOAD:libmupdf.dll %(AdditionalOptions)</AdditionalOptions>
     </Link>
     <PreBuildEvent>
-      <Command>cd ../rel64 &amp; ..\bin\MakeLZSA.exe InstallerData.dat libmupdf.dll:libmupdf.dll PdfFilter.dll:PdfFilter.dll PdfPreview.dll:PdfPreview.dll ..\mupdf\resources\fonts\droid\DroidSansFallback.ttf:DroidSansFallback.ttf ..\ext\UnrarDLL\x64\UnRAR64.dll:UnRAR64.dll</Command>
+      <Command>cd ../rel64 &amp; ..\bin\MakeLZSA.exe InstallerData.dat libmupdf.dll:libmupdf.dll PdfFilter.dll:PdfFilter.dll PdfPreview.dll:PdfPreview.dll ..\mupdf\resources\fonts\droid\DroidSansFallback.ttf:DroidSansFallback.ttf ..\ext\UnrarDLL\x64\UnRAR64.dll:UnRAR.dll</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ReleasePrefast|Win32'">
@@ -356,7 +356,7 @@
       <AdditionalOptions>/DELAYLOAD:gdiplus.dll /DELAYLOAD:msimg32.dll /DELAYLOAD:shlwapi.dll /DELAYLOAD:urlmon.dll /DELAYLOAD:version.dll /DELAYLOAD:wininet.dll /DELAYLOAD:libmupdf.dll %(AdditionalOptions)</AdditionalOptions>
     </Link>
     <PreBuildEvent>
-      <Command>cd ../relPrefast64 &amp; ..\bin\MakeLZSA.exe InstallerData.dat libmupdf.dll:libmupdf.dll PdfFilter.dll:PdfFilter.dll PdfPreview.dll:PdfPreview.dll ..\mupdf\resources\fonts\droid\DroidSansFallback.ttf:DroidSansFallback.ttf ..\ext\UnrarDLL\x64\UnRAR64.dll:UnRAR64.dll</Command>
+      <Command>cd ../relPrefast64 &amp; ..\bin\MakeLZSA.exe InstallerData.dat libmupdf.dll:libmupdf.dll PdfFilter.dll:PdfFilter.dll PdfPreview.dll:PdfPreview.dll ..\mupdf\resources\fonts\droid\DroidSansFallback.ttf:DroidSansFallback.ttf ..\ext\UnrarDLL\x64\UnRAR64.dll:UnRAR.dll</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>

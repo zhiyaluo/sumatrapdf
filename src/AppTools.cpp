@@ -514,11 +514,7 @@ static const WCHAR* Md5OfAppExe() {
     return md5Hex.StealData();
 }
 
-#ifdef _WIN64
-static const WCHAR* unrarFileName = L"unrar64.dll";
-#else
-static const WCHAR* unrarFileName = L"unrar.dll";
-#endif
+static const WCHAR* unrarFileName = L"UnRAR.dll";
 
 // remove all directories except for ours
 //. need to avoid acuumulating the directories when testing

@@ -62,7 +62,7 @@ struct PayloadInfo {
 
 extern InstUninstGlobals gInstUninstGlobals;
 extern const WCHAR* gDefaultMsg;
-extern PayloadInfo gPayloadData[];
+extern const char* gFilesToExtract[];
 extern WCHAR* gSupportedExts[];
 extern HWND gHwndFrame;
 extern HWND gHwndButtonExit;

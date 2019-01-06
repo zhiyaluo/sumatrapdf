@@ -77,7 +77,7 @@ static HWND gHwndProgressBar = nullptr;
 static int GetInstallationStepCount() {
     /* Installation steps
      * - Create directory
-     * - One per file to be copied (count extracted from gPayloadData)
+     * - One per file to be copied (count extracted from gFilesToExtract)
      * - Optional registration (default viewer, browser plugin),
      *   Shortcut and Registry keys
      *
@@ -86,9 +86,8 @@ static int GetInstallationStepCount() {
      * - and one step afterwards.
      */
     int count = 2;
-    for (int i = 0; nullptr != gPayloadData[i].fileName; i++) {
-        if (gPayloadData[i].install)
-            count++;
+    for (int i = 0; nullptr != gFilesToExtract[i]; i++) {
+        count++;
     }
     return count;
 }
@@ -102,10 +101,8 @@ static bool ExtractFiles(lzma::SimpleArchive* archive) {
     lzma::FileInfo* fi;
     char* uncompressed;
 
-    for (int i = 0; gPayloadData[i].fileName; i++) {
-        if (!gPayloadData[i].install)
-            continue;
-        int idx = lzma::GetIdxFromName(archive, gPayloadData[i].fileName);
+    for (int i = 0; gFilesToExtract[i] != nullptr; i++) {
+        int idx = lzma::GetIdxFromName(archive, gFilesToExtract[i]);
         if (-1 == idx) {
             NotifyFailed(_TR("Some files to be installed are damaged or missing"));
             return false;

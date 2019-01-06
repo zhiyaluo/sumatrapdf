@@ -294,6 +294,7 @@ static bool IsValidUnrarDll() {
     return ver >= 6;
 }
 
+// TODO: must check unrar64.dll on _WIN64 first but also accept unrar.dll on _WIN64
 #ifdef _WIN64
 static const WCHAR* unrarFileName = L"unrar64.dll";
 #else
