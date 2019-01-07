@@ -336,10 +336,11 @@ void OnUninstallationFinished() {
 static bool OnWmCommand(WPARAM wParam) {
     switch (LOWORD(wParam)) {
         case IDOK:
-            if (gHwndButtonInstUninst)
+            if (gHwndButtonInstUninst != nullptr) {
                 OnButtonUninstall();
-            else if (gHwndButtonExit)
+            } else if (gHwndButtonExit != nullptr) {
                 OnButtonExit();
+            }
             break;
 
         case ID_BUTTON_EXIT:
@@ -434,8 +435,9 @@ static LRESULT CALLBACK WndProcFrame(HWND hwnd, UINT message, WPARAM wParam, LPA
 
         case WM_APP_INSTALLATION_FINISHED:
             OnUninstallationFinished();
-            if (gHwndButtonExit)
-                SetFocus(gHwndButtonExit);
+            if (gHwndButtonExit != nullptr) {
+                SetFocus(gHwndButtonExit->hwnd);
+            }
             break;
 
         default:
@@ -586,6 +588,8 @@ int RunUninstaller() {
     }
 
     ret = RunApp();
+
+    delete gHwndButtonExit;
 
 Exit:
     free(gInstUninstGlobals.installDir);

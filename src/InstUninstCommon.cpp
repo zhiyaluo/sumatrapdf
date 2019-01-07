@@ -48,7 +48,7 @@ Color COLOR_MSG_INSTALLATION(gCol5);
 Color COLOR_MSG_FAILED(gCol1);
 
 HWND gHwndFrame = nullptr;
-HWND gHwndButtonExit = nullptr;
+ButtonCtrl* gHwndButtonExit = nullptr;
 ButtonCtrl* gHwndButtonInstUninst = nullptr;
 HFONT gFontDefault = nullptr;
 bool gShowOptions = false;
@@ -453,18 +453,7 @@ std::tuple<HWND, SIZE> CreateButton(HWND hwndParent, const WCHAR* s, int id, DWO
     return {hwnd, size};
 }
 
-HWND CreateDefaultButton(HWND hwndParent, const WCHAR* s, int id) {
-    auto [hwnd, size] = CreateButton(hwndParent, s, id, BS_DEFPUSHBUTTON);
-
-    ClientRect r(hwndParent);
-    int x = r.dx - size.cx - WINDOW_MARGIN;
-    int y = r.dy - size.cy - WINDOW_MARGIN;
-    UINT flags = SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_SHOWWINDOW;
-    SetWindowPos(hwnd, nullptr, x, y, 0, 0, flags);
-    return hwnd;
-}
-
-ButtonCtrl* CreateDefaultButton2(HWND hwndParent, const WCHAR* s, int id) {
+ButtonCtrl* CreateDefaultButton(HWND hwndParent, const WCHAR* s, int id) {
     auto* btn = new ButtonCtrl(hwndParent, id, nullptr);
     btn->Create(s);
     auto size = btn->GetIdealSize();

@@ -65,7 +65,7 @@ static InstallerGlobals gInstallerGlobals = {
 };
 
 static HWND gHwndButtonOptions = nullptr;
-static HWND gHwndButtonRunSumatra = nullptr;
+static ButtonCtrl* gHwndButtonRunSumatra = nullptr;
 static HWND gHwndStaticInstDir = nullptr;
 static HWND gHwndTextboxInstDir = nullptr;
 static HWND gHwndButtonBrowseDir = nullptr;
@@ -677,9 +677,9 @@ static bool OnWmCommand(WPARAM wParam) {
         case IDOK:
             if (gHwndButtonInstUninst != nullptr)
                 OnButtonInstall();
-            else if (gHwndButtonRunSumatra)
+            else if (gHwndButtonRunSumatra != nullptr)
                 OnButtonStartSumatra();
-            else if (gHwndButtonExit)
+            else if (gHwndButtonExit != nullptr)
                 OnButtonExit();
             break;
 
@@ -709,7 +709,7 @@ static bool OnWmCommand(WPARAM wParam) {
 //[ ACCESSKEY_GROUP Installer
 static void OnCreateWindow(HWND hwnd) {
     ClientRect r(hwnd);
-    gHwndButtonInstUninst = CreateDefaultButton2(hwnd, _TR("Install SumatraPDF"), IDOK);
+    gHwndButtonInstUninst = CreateDefaultButton(hwnd, _TR("Install SumatraPDF"), IDOK);
 
     auto [btn, btnSize] = CreateButton(hwnd, _TR("&Options"), ID_BUTTON_OPTIONS, BS_PUSHBUTTON);
     gHwndButtonOptions = btn;
@@ -902,10 +902,12 @@ static LRESULT CALLBACK WndProcFrame(HWND hwnd, UINT message, WPARAM wParam, LPA
 
         case WM_APP_INSTALLATION_FINISHED:
             OnInstallationFinished();
-            if (gHwndButtonRunSumatra)
-                SetFocus(gHwndButtonRunSumatra);
-            if (gHwndButtonExit)
-                SetFocus(gHwndButtonExit);
+            if (gHwndButtonRunSumatra != nullptr) {
+                SetFocus(gHwndButtonRunSumatra->hwnd);
+            }
+            if (gHwndButtonExit != nullptr) {
+                SetFocus(gHwndButtonExit->hwnd);
+            }
             break;
 
         default:
@@ -1093,6 +1095,8 @@ int RunInstaller() {
     ret = RunApp();
 
     delete gHwndButtonInstUninst;
+    delete gHwndButtonRunSumatra;
+    delete gHwndButtonExit;
 
 Exit:
     free(gInstUninstGlobals.installDir);
