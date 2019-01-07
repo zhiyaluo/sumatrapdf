@@ -14,6 +14,7 @@
 #include "Resource.h"
 #include "utils/Timer.h"
 #include "Version.h"
+#include "wingui/ButtonCtrl.h"
 #include "utils/WinUtil.h"
 #include "Installer.h"
 #include "utils/CmdLineParser.h"
@@ -21,7 +22,6 @@
 #include "utils/Dpi.h"
 #include "utils/FrameTimeoutCalculator.h"
 #include "utils/DebugLog.h"
-
 #include "utils/ByteOrderDecoder.h"
 #include "utils/LzmaSimpleArchive.h"
 
@@ -49,7 +49,7 @@ Color COLOR_MSG_FAILED(gCol1);
 
 HWND gHwndFrame = nullptr;
 HWND gHwndButtonExit = nullptr;
-HWND gHwndButtonInstUninst = nullptr;
+ButtonCtrl* gHwndButtonInstUninst = nullptr;
 HFONT gFontDefault = nullptr;
 bool gShowOptions = false;
 bool gForceCrash = false;
@@ -452,6 +452,19 @@ HWND CreateDefaultButton(HWND hwndParent, const WCHAR* s, int id) {
     UINT flags = SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_SHOWWINDOW;
     SetWindowPos(hwnd, nullptr, x, y, 0, 0, flags);
     return hwnd;
+}
+
+ButtonCtrl* CreateDefaultButton2(HWND hwndParent, const WCHAR* s, int id) {
+    auto* btn = new ButtonCtrl(hwndParent, id, nullptr);
+    btn->Create(s);
+    auto size = btn->GetIdealSize();
+
+    ClientRect r(hwndParent);
+    int x = r.dx - size.cx - WINDOW_MARGIN;
+    int y = r.dy - size.cy - WINDOW_MARGIN;
+    UINT flags = SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_SHOWWINDOW;
+    SetWindowPos(btn->hwnd, nullptr, x, y, 0, 0, flags);
+    return btn;
 }
 
 void CreateButtonExit(HWND hwndParent) {

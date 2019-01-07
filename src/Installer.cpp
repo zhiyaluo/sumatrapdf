@@ -24,6 +24,7 @@ The installer is good enough for production but it doesn't mean it couldn't be i
 #include "utils/Timer.h"
 #include "Version.h"
 #include "utils/WinUtil.h"
+#include "wingui/ButtonCtrl.h"
 #include "Installer.h"
 #include "utils/CmdLineParser.h"
 #include "CrashHandler.h"
@@ -517,7 +518,7 @@ static void OnButtonInstall() {
     SafeDestroyWindow(&gHwndCheckboxKeepBrowserPlugin);
     SafeDestroyWindow(&gHwndButtonOptions);
 
-    EnableWindow(gHwndButtonInstUninst, FALSE);
+    EnableWindow(gHwndButtonInstUninst->hwnd, FALSE);
 
     SetMsg(_TR("Installation in progress..."), COLOR_MSG_INSTALLATION);
     InvalidateFrame();
@@ -526,7 +527,8 @@ static void OnButtonInstall() {
 }
 
 static void OnInstallationFinished() {
-    SafeDestroyWindow(&gHwndButtonInstUninst);
+    delete gHwndButtonInstUninst;
+    gHwndButtonInstUninst = nullptr;
     SafeDestroyWindow(&gHwndProgressBar);
 
     if (gInstUninstGlobals.success) {
@@ -672,7 +674,7 @@ static void OnButtonBrowse() {
 static bool OnWmCommand(WPARAM wParam) {
     switch (LOWORD(wParam)) {
         case IDOK:
-            if (gHwndButtonInstUninst)
+            if (gHwndButtonInstUninst != nullptr)
                 OnButtonInstall();
             else if (gHwndButtonRunSumatra)
                 OnButtonStartSumatra();
@@ -706,7 +708,7 @@ static bool OnWmCommand(WPARAM wParam) {
 //[ ACCESSKEY_GROUP Installer
 static void OnCreateWindow(HWND hwnd) {
     ClientRect r(hwnd);
-    gHwndButtonInstUninst = CreateDefaultButton(hwnd, _TR("Install SumatraPDF"), IDOK);
+    gHwndButtonInstUninst = CreateDefaultButton2(hwnd, _TR("Install SumatraPDF"), IDOK);
 
     auto [btn, btnSize] = CreateButton(hwnd, _TR("&Options"), ID_BUTTON_OPTIONS, BS_PUSHBUTTON);
     gHwndButtonOptions = btn;
@@ -803,7 +805,7 @@ static void OnCreateWindow(HWND hwnd) {
     gShowOptions = !gShowOptions;
     OnButtonOptions();
 
-    SetFocus(gHwndButtonInstUninst);
+    SetFocus(gHwndButtonInstUninst->hwnd);
 
     if (gInstallerGlobals.autoUpdate) {
         // click the Install button
@@ -968,7 +970,7 @@ static int RunApp() {
         // check if there are processes that need to be closed but
         // not more frequently than once per ten seconds and
         // only before (un)installation starts.
-        if (t.GetTimeInMs() > 10000 && gHwndButtonInstUninst && IsWindowEnabled(gHwndButtonInstUninst)) {
+        if (t.GetTimeInMs() > 10000 && gHwndButtonInstUninst && IsWindowEnabled(gHwndButtonInstUninst->hwnd)) {
             CheckInstallUninstallPossible(true);
             t.Start();
         }

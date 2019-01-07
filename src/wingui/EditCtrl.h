@@ -27,7 +27,7 @@ class EditCtrl {
     SIZE GetIdealSize();
     void SetPos(RECT*);
 
-    // creation parameters. must be set before CreateEditCtrl() call
+    // creation parameters. must be set before Create() call
     HWND parent = 0;
     RECT initialPos = {0, 0, 0, 0};
     DWORD dwStyle = WS_CHILD | WS_VISIBLE | ES_LEFT | ES_AUTOHSCROLL;

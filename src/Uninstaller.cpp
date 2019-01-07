@@ -24,6 +24,7 @@ The installer is good enough for production but it doesn't mean it couldn't be i
 #include "utils/Timer.h"
 #include "Version.h"
 #include "utils/WinUtil.h"
+#include "wingui/ButtonCtrl.h"
 #include "Installer.h"
 #include "utils/CmdLineParser.h"
 #include "CrashHandler.h"
@@ -314,7 +315,7 @@ static void OnButtonUninstall() {
         return;
 
     // disable the button during uninstallation
-    EnableWindow(gHwndButtonInstUninst, FALSE);
+    EnableWindow(gHwndButtonInstUninst->hwnd, FALSE);
     SetMsg(_TR("Uninstallation in progress..."), COLOR_MSG_INSTALLATION);
     InvalidateFrame();
 
@@ -322,7 +323,7 @@ static void OnButtonUninstall() {
 }
 
 void OnUninstallationFinished() {
-    DestroyWindow(gHwndButtonInstUninst);
+    delete gHwndButtonInstUninst;
     gHwndButtonInstUninst = nullptr;
     CreateButtonExit(gHwndFrame);
     SetMsg(_TR("SumatraPDF has been uninstalled."), gMsgError ? COLOR_MSG_FAILED : COLOR_MSG_OK);
@@ -353,7 +354,8 @@ static bool OnWmCommand(WPARAM wParam) {
 }
 
 static void OnCreateWindow(HWND hwnd) {
-    gHwndButtonInstUninst = CreateDefaultButton(hwnd, _TR("Uninstall SumatraPDF"), IDOK);
+    gHwndButtonInstUninst = new ButtonCtrl(hwnd, IDOK, nullptr);
+    gHwndButtonInstUninst->Create(_TR("Uninstall SumatraPDF"));
 }
 
 static void CreateMainWindow() {
@@ -499,7 +501,7 @@ static int RunApp() {
         // check if there are processes that need to be closed but
         // not more frequently than once per ten seconds and
         // only before (un)installation starts.
-        if (t.GetTimeInMs() > 10000 && gHwndButtonInstUninst && IsWindowEnabled(gHwndButtonInstUninst)) {
+        if (t.GetTimeInMs() > 10000 && gHwndButtonInstUninst && IsWindowEnabled(gHwndButtonInstUninst->hwnd)) {
             CheckInstallUninstallPossible(true);
             t.Start();
         }

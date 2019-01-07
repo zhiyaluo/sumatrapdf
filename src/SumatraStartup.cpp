@@ -56,6 +56,7 @@
 #include "Menu.h"
 #include "utils/Archive.h"
 #include "AppTools.h"
+#include "wingui/ButtonCtrl.h"
 #include "Installer.h"
 
 #define CRASH_DUMP_FILE_NAME L"sumatrapdfcrash.dmp"
@@ -587,12 +588,22 @@ static bool IsInstaller() {
     bool isInstaller = str::FindI(exeName, L"install");
     str::Free(exeName);
     str::Free(exePath);
+    if (isInstaller) {
+        return true;
+    }
+    // TODO: false positives possible
+    WCHAR* cmdline = GetCommandLineW();
+    isInstaller = str::FindI(cmdline, L"/install");
+    if (!isInstaller) {
+        isInstaller = str::FindI(cmdline, L"-install");
+    }
     return isInstaller;
 }
 
 // Uninstaller is when we're called with /uninstall cmd-line arg
 static bool IsUninstaller() {
     WCHAR* cmdline = GetCommandLineW();
+    // TODO: false positives possible
     bool isUninstaller = str::FindI(cmdline, L"/uninstall");
     if (!isUninstaller) {
         isUninstaller = str::FindI(cmdline, L"-uninstall");
@@ -661,6 +672,11 @@ int APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
         goto Exit;
     }
 
+    bool ok = MaybeExtractFiles();
+    if (!ok) {
+        return 1;
+    }
+
 #if defined(DEBUG) || defined(SVN_PRE_RELEASE_VER)
     if (str::StartsWith(cmdLine, "/tester")) {
         extern int TesterMain(); // in Tester.cpp
@@ -680,11 +696,6 @@ int APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
         }
     }
 #endif
-
-    bool ok = MaybeExtractFiles();
-    if (!ok) {
-        return 1;
-    }
 
     if (i.testRenderPage) {
         TestRenderPage(i);
