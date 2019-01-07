@@ -529,6 +529,7 @@ static void OnButtonInstall() {
 static void OnInstallationFinished() {
     delete gHwndButtonInstUninst;
     gHwndButtonInstUninst = nullptr;
+
     SafeDestroyWindow(&gHwndProgressBar);
 
     if (gInstUninstGlobals.success) {
@@ -1090,6 +1091,8 @@ int RunInstaller() {
     }
 
     ret = RunApp();
+
+    delete gHwndButtonInstUninst;
 
 Exit:
     free(gInstUninstGlobals.installDir);
