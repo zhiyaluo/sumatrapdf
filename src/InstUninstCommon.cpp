@@ -104,23 +104,6 @@ void SetMsg(const WCHAR* msg, Color color) {
     gMsgColor = color;
 }
 
-#if 1
-static HFONT CreateDefaultGuiFont() {
-    NONCLIENTMETRICSW ncm;
-    ncm.cbSize = sizeof(ncm);
-    SystemParametersInfoW(SPI_GETNONCLIENTMETRICS, sizeof(ncm), &ncm, 0);
-    HFONT f = CreateFontIndirectW(&ncm.lfMenuFont);
-    return f;
-}
-#else
-static HFONT CreateDefaultGuiFont() {
-    HDC hdc = GetDC(nullptr);
-    HFONT font = CreateSimpleFont(hdc, L"MS Shell Dlg", 14);
-    ReleaseDC(nullptr, hdc);
-    return font;
-}
-#endif
-
 void InvalidateFrame() {
     ClientRect rc(gHwndFrame);
     RECT rcTmp = rc.ToRECT();
@@ -128,7 +111,7 @@ void InvalidateFrame() {
 }
 
 void InitInstallerUninstaller() {
-    gFontDefault = CreateDefaultGuiFont();
+    gFontDefault = GetDefaultGuiFont();
     gUiDPIFactor = (float)DpiGet(HWND_DESKTOP)->dpiX / 96.f;
     trans::SetCurrentLangByCode(trans::DetectUserLang());
 }
@@ -424,33 +407,12 @@ bool CheckInstallUninstallPossible(bool silent) {
     return possible;
 }
 
-SIZE GetIdealButtonSize(HWND hwnd) {
-    // adjust to real size and position to the right
-    SIZE s;
-    Button_GetIdealSize(hwnd, &s);
-    // add padding
-    s.cx += dpiAdjust(8) * 2;
-    s.cy += dpiAdjust(2) * 2;
-    return s;
-}
-
-SIZE SetButtonTextAndResize(HWND hwnd, const WCHAR* s) {
-    win::SetText(hwnd, s);
-    SIZE size = GetIdealButtonSize(hwnd);
-    SetWindowPos(hwnd, nullptr, 0, 0, size.cx, size.cy,
-                 SWP_NOMOVE | SWP_NOZORDER | SWP_NOREDRAW | SWP_NOACTIVATE | SWP_FRAMECHANGED);
-    return size;
-}
-
 // Creates a button that has a right size for it's text,
-std::tuple<HWND, SIZE> CreateButton(HWND hwndParent, const WCHAR* s, int id, DWORD style) {
-    HMENU idMenu = (HMENU)(UINT_PTR)id;
-    style |= WS_CHILD | WS_TABSTOP;
-    auto h = GetModuleHandle(nullptr);
-    HWND hwnd = CreateWindowExW(0, WC_BUTTON, L"", style, 0, 0, 100, 20, hwndParent, idMenu, h, nullptr);
-    SetWindowFont(hwnd, gFontDefault, TRUE);
-    SIZE size = SetButtonTextAndResize(hwnd, s);
-    return {hwnd, size};
+ButtonCtrl* CreateButton(HWND hwndParent, const WCHAR* s, int id, DWORD style) {
+    auto* btn = new ButtonCtrl(hwndParent, id, nullptr);
+    btn->dwStyle |= style;
+    btn->Create(s);
+    return btn;
 }
 
 ButtonCtrl* CreateDefaultButton(HWND hwndParent, const WCHAR* s, int id) {
@@ -546,6 +508,9 @@ static void RevealingLettersAnimStart() {
 }
 
 static void RevealingLettersAnimStop() {
+    if (!gRevealingLettersAnim) {
+        return;
+    }
     delete gRevealingLettersAnim;
     gRevealingLettersAnim = nullptr;
     SetLettersSumatra();

@@ -64,11 +64,11 @@ static InstallerGlobals gInstallerGlobals = {
     false, /* bool autoUpdate */
 };
 
-static HWND gHwndButtonOptions = nullptr;
+static ButtonCtrl* gHwndButtonOptions = nullptr;
 static ButtonCtrl* gHwndButtonRunSumatra = nullptr;
 static HWND gHwndStaticInstDir = nullptr;
 static HWND gHwndTextboxInstDir = nullptr;
-static HWND gHwndButtonBrowseDir = nullptr;
+static ButtonCtrl* gHwndButtonBrowseDir = nullptr;
 static HWND gHwndCheckboxRegisterDefault = nullptr;
 static HWND gHwndCheckboxRegisterPdfFilter = nullptr;
 static HWND gHwndCheckboxRegisterPdfPreviewer = nullptr;
@@ -502,7 +502,7 @@ static void OnButtonInstall() {
 
     // create a progress bar in place of the Options button
     RectI rc(0, 0, dpiAdjust(INSTALLER_WIN_DX / 2), gButtonDy);
-    rc = MapRectToWindow(rc, gHwndButtonOptions, gHwndFrame);
+    rc = MapRectToWindow(rc, gHwndButtonOptions->hwnd, gHwndFrame);
     gHwndProgressBar = CreateWindow(PROGRESS_CLASS, nullptr, WS_CHILD | WS_VISIBLE, rc.x, rc.y, rc.dx, rc.dy,
                                     gHwndFrame, 0, GetModuleHandle(nullptr), nullptr);
     SendMessage(gHwndProgressBar, PBM_SETRANGE32, 0, GetInstallationStepCount());
@@ -511,12 +511,17 @@ static void OnButtonInstall() {
     // disable the install button and remove all the installation options
     SafeDestroyWindow(&gHwndStaticInstDir);
     SafeDestroyWindow(&gHwndTextboxInstDir);
-    SafeDestroyWindow(&gHwndButtonBrowseDir);
+
+    delete gHwndButtonBrowseDir;
+    gHwndButtonBrowseDir = nullptr;
+
     SafeDestroyWindow(&gHwndCheckboxRegisterDefault);
     SafeDestroyWindow(&gHwndCheckboxRegisterPdfFilter);
     SafeDestroyWindow(&gHwndCheckboxRegisterPdfPreviewer);
     SafeDestroyWindow(&gHwndCheckboxKeepBrowserPlugin);
-    SafeDestroyWindow(&gHwndButtonOptions);
+
+    delete gHwndButtonOptions;
+    gHwndButtonOptions = nullptr;
 
     EnableWindow(gHwndButtonInstUninst->hwnd, FALSE);
 
@@ -569,7 +574,7 @@ static void OnButtonOptions() {
 
     EnableAndShow(gHwndStaticInstDir, gShowOptions);
     EnableAndShow(gHwndTextboxInstDir, gShowOptions);
-    EnableAndShow(gHwndButtonBrowseDir, gShowOptions);
+    EnableAndShow(gHwndButtonBrowseDir->hwnd, gShowOptions);
     EnableAndShow(gHwndCheckboxRegisterDefault, gShowOptions);
     EnableAndShow(gHwndCheckboxRegisterPdfFilter, gShowOptions);
     EnableAndShow(gHwndCheckboxRegisterPdfPreviewer, gShowOptions);
@@ -577,11 +582,13 @@ static void OnButtonOptions() {
 
     //[ ACCESSKEY_GROUP Installer
     //[ ACCESSKEY_ALTERNATIVE // ideally, the same accesskey is used for both
-    if (gShowOptions)
-        SetButtonTextAndResize(gHwndButtonOptions, _TR("Hide &Options"));
+    if (gShowOptions) {
+        gHwndButtonOptions->SetTextAndResize(_TR("Hide &Options"));
+    }
     //| ACCESSKEY_ALTERNATIVE
-    else
-        SetButtonTextAndResize(gHwndButtonOptions, _TR("&Options"));
+    else {
+        gHwndButtonOptions->SetTextAndResize(_TR("&Options"));
+    }
     //] ACCESSKEY_ALTERNATIVE
     //] ACCESSKEY_GROUP Installer
 
@@ -589,7 +596,7 @@ static void OnButtonOptions() {
     RECT rcTmp = rc.ToRECT();
     InvalidateRect(gHwndFrame, &rcTmp, TRUE);
 
-    SetFocus(gHwndButtonOptions);
+    SetFocus(gHwndButtonOptions->hwnd);
 }
 
 static int CALLBACK BrowseCallbackProc(HWND hwnd, UINT msg, LPARAM lParam, LPARAM lpData) {
@@ -654,7 +661,7 @@ static void OnButtonBrowse() {
     BOOL ok = BrowseForFolder(gHwndFrame, installDir, _TR("Select the folder where SumatraPDF should be installed:"),
                               path, dimof(path));
     if (!ok) {
-        SetFocus(gHwndButtonBrowseDir);
+        SetFocus(gHwndButtonBrowseDir->hwnd);
         return;
     }
 
@@ -711,11 +718,14 @@ static void OnCreateWindow(HWND hwnd) {
     ClientRect r(hwnd);
     gHwndButtonInstUninst = CreateDefaultButton(hwnd, _TR("Install SumatraPDF"), IDOK);
 
-    auto [btn, btnSize] = CreateButton(hwnd, _TR("&Options"), ID_BUTTON_OPTIONS, BS_PUSHBUTTON);
-    gHwndButtonOptions = btn;
+    gHwndButtonOptions = CreateButton(hwnd, _TR("&Options"), ID_BUTTON_OPTIONS, BS_PUSHBUTTON);
+    auto* btn = gHwndButtonOptions;
+    auto btnSize = btn->GetIdealSize();
+    // TODO: leaking gHwndButtonOptions
     int x = WINDOW_MARGIN;
     int y = r.dy - btnSize.cy - WINDOW_MARGIN;
-    SetWindowPos(gHwndButtonOptions, nullptr, x, y, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_SHOWWINDOW);
+    UINT flags = SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_SHOWWINDOW;
+    SetWindowPos(gHwndButtonOptions->hwnd, nullptr, x, y, 0, 0, flags);
 
     gButtonDy = btnSize.cy;
     gBottomPartDy = gButtonDy + (WINDOW_MARGIN * 2);
@@ -785,10 +795,11 @@ static void OnCreateWindow(HWND hwnd) {
     const WCHAR* s = L"&...";
     SizeI btnSize2 = TextSizeInHwnd(hwnd, s);
     // btnSize.cx += dpiAdjust(4);
-    std::tie(gHwndButtonBrowseDir, btnSize) = CreateButton(hwnd, s, ID_BUTTON_BROWSE, BS_PUSHBUTTON);
+    gHwndButtonBrowseDir = CreateButton(hwnd, s, ID_BUTTON_BROWSE, BS_PUSHBUTTON);
+    btnSize = gHwndButtonBrowseDir->GetIdealSize();
     x = r.dx - WINDOW_MARGIN - btnSize2.dx;
-    SetWindowPos(gHwndButtonBrowseDir, nullptr, x, y, btnSize2.dx, staticDy,
-                 SWP_NOZORDER | SWP_NOACTIVATE | SWP_SHOWWINDOW | SWP_FRAMECHANGED);
+    flags = SWP_NOZORDER | SWP_NOACTIVATE | SWP_SHOWWINDOW | SWP_FRAMECHANGED;
+    SetWindowPos(gHwndButtonBrowseDir->hwnd, nullptr, x, y, btnSize2.dx, staticDy, flags);
 
     x = WINDOW_MARGIN;
     dx = r.dx - (2 * WINDOW_MARGIN) - btnSize2.dx - dpiAdjust(4);
@@ -1097,6 +1108,8 @@ int RunInstaller() {
     delete gHwndButtonInstUninst;
     delete gHwndButtonRunSumatra;
     delete gHwndButtonExit;
+    delete gHwndButtonBrowseDir;
+    delete gHwndButtonOptions;
 
 Exit:
     free(gInstUninstGlobals.installDir);
