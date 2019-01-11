@@ -70,9 +70,9 @@ static HWND gHwndStaticInstDir = nullptr;
 static HWND gHwndTextboxInstDir = nullptr;
 static ButtonCtrl* gHwndButtonBrowseDir = nullptr;
 static CheckboxCtrl* gHwndCheckboxRegisterDefault = nullptr;
-static HWND gHwndCheckboxRegisterPdfFilter = nullptr;
-static HWND gHwndCheckboxRegisterPdfPreviewer = nullptr;
-static HWND gHwndCheckboxKeepBrowserPlugin = nullptr;
+static CheckboxCtrl* gHwndCheckboxRegisterPdfFilter = nullptr;
+static CheckboxCtrl* gHwndCheckboxRegisterPdfPreviewer = nullptr;
+static CheckboxCtrl* gHwndCheckboxKeepBrowserPlugin = nullptr;
 static HWND gHwndProgressBar = nullptr;
 
 static int GetInstallationStepCount() {
@@ -465,10 +465,6 @@ Error:
 
 static void OnButtonOptions();
 
-static bool IsCheckboxChecked(HWND hwnd) {
-    return (Button_GetState(hwnd) & BST_CHECKED) == BST_CHECKED;
-}
-
 static void OnButtonInstall() {
     CrashAlwaysIf(gForceCrash);
 
@@ -492,13 +488,13 @@ static void OnButtonInstall() {
 
     // note: this checkbox isn't created when running inside Wow64
     gInstallerGlobals.installPdfFilter =
-        gHwndCheckboxRegisterPdfFilter != nullptr && IsCheckboxChecked(gHwndCheckboxRegisterPdfFilter);
+        gHwndCheckboxRegisterPdfFilter != nullptr && gHwndCheckboxRegisterPdfFilter->IsChecked();
     // note: this checkbox isn't created on Windows 2000 and XP
     gInstallerGlobals.installPdfPreviewer =
-        gHwndCheckboxRegisterPdfPreviewer != nullptr && IsCheckboxChecked(gHwndCheckboxRegisterPdfPreviewer);
+        gHwndCheckboxRegisterPdfPreviewer != nullptr && gHwndCheckboxRegisterPdfPreviewer->IsChecked();
     // note: this checkbox isn't created if the browser plugin hasn't been installed before
     gInstallerGlobals.keepBrowserPlugin =
-        gHwndCheckboxKeepBrowserPlugin != nullptr && IsCheckboxChecked(gHwndCheckboxKeepBrowserPlugin);
+        gHwndCheckboxKeepBrowserPlugin != nullptr && gHwndCheckboxKeepBrowserPlugin->IsChecked();
 
     // create a progress bar in place of the Options button
     RectI rc(0, 0, dpiAdjust(INSTALLER_WIN_DX / 2), gButtonDy);
@@ -518,9 +514,14 @@ static void OnButtonInstall() {
     delete gHwndCheckboxRegisterDefault;
     gHwndCheckboxRegisterDefault = nullptr;
 
-    SafeDestroyWindow(&gHwndCheckboxRegisterPdfFilter);
-    SafeDestroyWindow(&gHwndCheckboxRegisterPdfPreviewer);
-    SafeDestroyWindow(&gHwndCheckboxKeepBrowserPlugin);
+    delete gHwndCheckboxRegisterPdfFilter;
+    gHwndCheckboxRegisterPdfFilter = nullptr;
+
+    delete gHwndCheckboxRegisterPdfPreviewer;
+    gHwndCheckboxRegisterPdfPreviewer = nullptr;
+
+    delete gHwndCheckboxKeepBrowserPlugin;
+    gHwndCheckboxKeepBrowserPlugin = nullptr;
 
     delete gHwndButtonOptions;
     gHwndButtonOptions = nullptr;
@@ -571,13 +572,25 @@ static void EnableAndShow(HWND hwnd, bool enable) {
     EnableWindow(hwnd, enable);
 }
 
+static void EnableAndShow(CheckboxCtrl* ctrl, bool enable) {
+    if (ctrl != nullptr) {
+        EnableAndShow(ctrl->hwnd, enable);
+    }
+}
+
+static void EnableAndShow(ButtonCtrl* ctrl, bool enable) {
+    if (ctrl != nullptr) {
+        EnableAndShow(ctrl->hwnd, enable);
+    }
+}
+
 static void OnButtonOptions() {
     gShowOptions = !gShowOptions;
 
     EnableAndShow(gHwndStaticInstDir, gShowOptions);
     EnableAndShow(gHwndTextboxInstDir, gShowOptions);
-    EnableAndShow(gHwndButtonBrowseDir->hwnd, gShowOptions);
-    EnableAndShow(gHwndCheckboxRegisterDefault->hwnd, gShowOptions);
+    EnableAndShow(gHwndButtonBrowseDir, gShowOptions);
+    EnableAndShow(gHwndCheckboxRegisterDefault, gShowOptions);
     EnableAndShow(gHwndCheckboxRegisterPdfFilter, gShowOptions);
     EnableAndShow(gHwndCheckboxRegisterPdfPreviewer, gShowOptions);
     EnableAndShow(gHwndCheckboxKeepBrowserPlugin, gShowOptions);
@@ -749,12 +762,12 @@ static void OnCreateWindow(HWND hwnd) {
 
     // only show this checkbox if the browser plugin has been installed before
     if (IsBrowserPluginInstalled()) {
-        gHwndCheckboxKeepBrowserPlugin =
-            CreateWindowExW(0, WC_BUTTON, _TR("Keep the PDF &browser plugin installed (no longer supported)"),
-                            WS_CHILD | BS_AUTOCHECKBOX | WS_TABSTOP, x, y, dx, staticDy, hwnd,
-                            (HMENU)ID_CHECKBOX_BROWSER_PLUGIN, GetModuleHandle(nullptr), nullptr);
-        SetWindowFont(gHwndCheckboxKeepBrowserPlugin, gFontDefault, TRUE);
-        Button_SetCheck(gHwndCheckboxKeepBrowserPlugin, gInstallerGlobals.keepBrowserPlugin);
+        RECT pos{x, y, x + dx, y + staticDy};
+        gHwndCheckboxKeepBrowserPlugin = new CheckboxCtrl(hwnd, ID_CHECKBOX_BROWSER_PLUGIN, &pos);
+        gHwndCheckboxKeepBrowserPlugin->Create(_TR("Keep the PDF &browser plugin installed (no longer supported)"));
+        gHwndCheckboxKeepBrowserPlugin->SetFont(gFontDefault);
+        bool isChecked = gInstallerGlobals.keepBrowserPlugin;
+        gHwndCheckboxKeepBrowserPlugin->SetIsChecked(isChecked);
         y -= staticDy;
     }
 
@@ -762,21 +775,24 @@ static void OnCreateWindow(HWND hwnd) {
     // (assuming that the installer has the same CPU arch as its content!)
     if (IsProcessAndOsArchSame()) {
         // for Windows XP, this means only basic thumbnail support
-        gHwndCheckboxRegisterPdfPreviewer = CreateWindowExW(
-            0, WC_BUTTON, _TR("Let Windows show &previews of PDF documents"), WS_CHILD | BS_AUTOCHECKBOX | WS_TABSTOP,
-            x, y, dx, staticDy, hwnd, (HMENU)ID_CHECKBOX_PDF_PREVIEWER, GetModuleHandle(nullptr), nullptr);
-        SetWindowFont(gHwndCheckboxRegisterPdfPreviewer, gFontDefault, TRUE);
-        Button_SetCheck(gHwndCheckboxRegisterPdfPreviewer,
-                        gInstallerGlobals.installPdfPreviewer || IsPdfPreviewerInstalled());
-        y -= staticDy;
-
-        gHwndCheckboxRegisterPdfFilter =
-            CreateWindowEx(0, WC_BUTTON, _TR("Let Windows Desktop Search &search PDF documents"),
-                           WS_CHILD | BS_AUTOCHECKBOX | WS_TABSTOP, x, y, dx, staticDy, hwnd,
-                           (HMENU)ID_CHECKBOX_PDF_FILTER, GetModuleHandle(nullptr), nullptr);
-        SetWindowFont(gHwndCheckboxRegisterPdfFilter, gFontDefault, TRUE);
-        Button_SetCheck(gHwndCheckboxRegisterPdfFilter, gInstallerGlobals.installPdfFilter || IsPdfFilterInstalled());
-        y -= staticDy;
+        {
+            RECT pos{x, y, x + dx, y + staticDy};
+            gHwndCheckboxRegisterPdfPreviewer = new CheckboxCtrl(hwnd, ID_CHECKBOX_PDF_PREVIEWER, &pos);
+            gHwndCheckboxRegisterPdfPreviewer->Create(_TR("Let Windows show &previews of PDF documents"));
+            gHwndCheckboxRegisterPdfPreviewer->SetFont(gFontDefault);
+            bool isChecked = gInstallerGlobals.installPdfPreviewer || IsPdfPreviewerInstalled();
+            gHwndCheckboxRegisterPdfPreviewer->SetIsChecked(isChecked);
+            y -= staticDy;
+        }
+        {
+            RECT pos{x, y, x + dx, y + staticDy};
+            gHwndCheckboxRegisterPdfFilter = new CheckboxCtrl(hwnd, ID_CHECKBOX_PDF_FILTER, &pos);
+            gHwndCheckboxRegisterPdfFilter->Create(_TR("Let Windows Desktop Search &search PDF documents"));
+            gHwndCheckboxRegisterPdfFilter->SetFont(gFontDefault);
+            bool isChecked = gInstallerGlobals.installPdfFilter || IsPdfFilterInstalled();
+            gHwndCheckboxRegisterPdfFilter->SetIsChecked(isChecked);
+            y -= staticDy;
+        }
     }
 
     // only show the checbox if Sumatra is not already a default viewer.
@@ -1113,6 +1129,9 @@ int RunInstaller() {
     delete gHwndButtonExit;
     delete gHwndButtonBrowseDir;
     delete gHwndCheckboxRegisterDefault;
+    delete gHwndCheckboxRegisterPdfFilter;
+    delete gHwndCheckboxRegisterPdfPreviewer;
+    delete gHwndCheckboxKeepBrowserPlugin;
     delete gHwndButtonOptions;
 
 Exit:
