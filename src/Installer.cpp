@@ -69,7 +69,7 @@ static ButtonCtrl* gHwndButtonRunSumatra = nullptr;
 static HWND gHwndStaticInstDir = nullptr;
 static HWND gHwndTextboxInstDir = nullptr;
 static ButtonCtrl* gHwndButtonBrowseDir = nullptr;
-static HWND gHwndCheckboxRegisterDefault = nullptr;
+static CheckboxCtrl* gHwndCheckboxRegisterDefault = nullptr;
 static HWND gHwndCheckboxRegisterPdfFilter = nullptr;
 static HWND gHwndCheckboxRegisterPdfPreviewer = nullptr;
 static HWND gHwndCheckboxKeepBrowserPlugin = nullptr;
@@ -488,7 +488,7 @@ static void OnButtonInstall() {
     // note: this checkbox isn't created if we're already registered as default
     //       (in which case we're just going to re-register)
     gInstallerGlobals.registerAsDefault =
-        gHwndCheckboxRegisterDefault == nullptr || IsCheckboxChecked(gHwndCheckboxRegisterDefault);
+        gHwndCheckboxRegisterDefault == nullptr || gHwndCheckboxRegisterDefault->IsChecked();
 
     // note: this checkbox isn't created when running inside Wow64
     gInstallerGlobals.installPdfFilter =
@@ -515,7 +515,9 @@ static void OnButtonInstall() {
     delete gHwndButtonBrowseDir;
     gHwndButtonBrowseDir = nullptr;
 
-    SafeDestroyWindow(&gHwndCheckboxRegisterDefault);
+    delete gHwndCheckboxRegisterDefault;
+    gHwndCheckboxRegisterDefault = nullptr;
+
     SafeDestroyWindow(&gHwndCheckboxRegisterPdfFilter);
     SafeDestroyWindow(&gHwndCheckboxRegisterPdfPreviewer);
     SafeDestroyWindow(&gHwndCheckboxKeepBrowserPlugin);
@@ -575,7 +577,7 @@ static void OnButtonOptions() {
     EnableAndShow(gHwndStaticInstDir, gShowOptions);
     EnableAndShow(gHwndTextboxInstDir, gShowOptions);
     EnableAndShow(gHwndButtonBrowseDir->hwnd, gShowOptions);
-    EnableAndShow(gHwndCheckboxRegisterDefault, gShowOptions);
+    EnableAndShow(gHwndCheckboxRegisterDefault->hwnd, gShowOptions);
     EnableAndShow(gHwndCheckboxRegisterPdfFilter, gShowOptions);
     EnableAndShow(gHwndCheckboxRegisterPdfPreviewer, gShowOptions);
     EnableAndShow(gHwndCheckboxKeepBrowserPlugin, gShowOptions);
@@ -780,13 +782,14 @@ static void OnCreateWindow(HWND hwnd) {
     // only show the checbox if Sumatra is not already a default viewer.
     // the alternative (disabling the checkbox) is more confusing
     if (!isSumatraDefaultViewer) {
-        gHwndCheckboxRegisterDefault = CreateWindowExW(
-            0, WC_BUTTON, _TR("Use SumatraPDF as the &default PDF reader"), WS_CHILD | BS_AUTOCHECKBOX | WS_TABSTOP, x,
-            y, dx, staticDy, hwnd, (HMENU)ID_CHECKBOX_MAKE_DEFAULT, GetModuleHandle(nullptr), nullptr);
-        SetWindowFont(gHwndCheckboxRegisterDefault, gFontDefault, TRUE);
+        RECT pos{x, y, x + dx, y + staticDy};
+        gHwndCheckboxRegisterDefault = new CheckboxCtrl(hwnd, ID_CHECKBOX_MAKE_DEFAULT, &pos);
+        gHwndCheckboxRegisterDefault->Create(_TR("Use SumatraPDF as the &default PDF reader"));
+        gHwndCheckboxRegisterDefault->SetFont(gFontDefault);
         // only check the "Use as default" checkbox when no other PDF viewer
         // is currently selected (not going to intrude)
-        Button_SetCheck(gHwndCheckboxRegisterDefault, !hasOtherViewer || gInstallerGlobals.registerAsDefault);
+        bool isChecked = !hasOtherViewer || gInstallerGlobals.registerAsDefault;
+        gHwndCheckboxRegisterDefault->SetIsChecked(isChecked);
         y -= staticDy;
     }
     // a bit more space between text box and checkboxes
@@ -1109,6 +1112,7 @@ int RunInstaller() {
     delete gHwndButtonRunSumatra;
     delete gHwndButtonExit;
     delete gHwndButtonBrowseDir;
+    delete gHwndCheckboxRegisterDefault;
     delete gHwndButtonOptions;
 
 Exit:
